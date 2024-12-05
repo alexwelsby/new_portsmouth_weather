@@ -10,3 +10,5 @@ A bespoke weather bot for the Anima Mundi roleplay server.
 - Base code off this weather bot here: https://stackoverflow.com/questions/63486570/how-to-make-a-weather-command-using-discord-py-v1-4-1
 - potentially an option to preview queued weather events? and also an option to edit or delete weather events
 - allow mods to schedule weather events for specific dates in advance
+- maybe have a host of pre-baked 'spring' 'summer' 'autumn' and 'winter' weather types that will autopopulate for each weekly date if nothing else is input for those dates? and base these weather patterns off 2022-2023 weather patterns, not decade averages - PNW is experiencing climate stress
+- allow mods to print out a month's current line-up of weather or multiple months in a command
