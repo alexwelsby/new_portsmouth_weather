@@ -1,5 +1,6 @@
 #specific to new_portsmouth_weather, utility files I used from elsewhere
 data/
+.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

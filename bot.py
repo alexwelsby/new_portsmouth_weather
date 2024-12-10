@@ -5,29 +5,44 @@ import requests
 from dotenv import load_dotenv
 from dateutil.parser import parse
 from datetime import datetime, timedelta
+from dateutil.tz.tz import tzoffset
+from collections import defaultdict
 
 import discord
 from discord.ext import commands
 
+import redis
+import json
+
 load_dotenv()
+
 TOKEN = os.getenv('DISCORD_TOKEN')
-API_KEY = os.getenv('API_KEY')
+PORT = int(os.getenv('PORT'))
+PASSWORD = os.getenv('PASSWORD')
+USERNAME = os.getenv('USERNAME')
 BASE_URL = os.getenv('BASE_URL')
 
-ALL_MODES = ['auto', 'manual']
+#redis database connection
+redis_client = redis.StrictRedis(
+    host=BASE_URL,
+    port=PORT,
+    username=USERNAME,
+    password=PASSWORD,
+    decode_responses=True
+)
 
 start_time = 0
 uptime = 0
 
-bot_date = '2023/02/01'
+bot_date = '2023-02-01'
+season = 'winter'
 
-
+ALL_MODES = ["auto", "manual"]
 current_mode = ALL_MODES[0] #will be auto
 
 
 intents = discord.Intents.default()
 intents.message_content = True
-
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 @bot.event
@@ -38,85 +53,116 @@ async def on_ready():
     calculateUptime()
     print(f'Bot\'s start time has been set to {start_time}. Current uptime: {uptime} (Uptime is used to decide when to advance the calendar in Auto mode.)')
 
-"""These are all just here for my reference 
 
-@bot.event
-async def on_member_join(member):
-    await member.create_dm()
-    await member.dm_channel.send(
-        f'Hi {member.name}, welcome to my Discord server!'
-    )
-
-@bot.command(name='99')
-async def nine_nine(ctx):
-    brooklyn_99_quotes = [
-        'I\'m the human form of the 💯 emoji.',
-        'Bingpot!',
-        (
-            'Cool. Cool cool cool cool cool cool cool, '
-            'no doubt no doubt no doubt no doubt.'
-        ),
-    ]
-
-    response = random.choice(brooklyn_99_quotes)
-    await ctx.send(response)
-    
-@bot.command(name='roll_dice', help='Simulates rolling dice.')
-async def roll(ctx, number_of_dice: int, number_of_sides: int):
-    try:
-        # Validate input: Ensure numbers are positive
-        if number_of_dice <= 0 or number_of_sides <= 0:
-            await ctx.send("Both the number of dice and the number of sides must be positive integers.")
-            return
-        
-        # Generate dice rolls
-        dice = [
-            str(random.choice(range(1, number_of_sides + 1)))
-            for _ in range(number_of_dice)
-        ]
-        await ctx.send(', '.join(dice))
-    except ValueError:
-        await ctx.send("Invalid parameters. Usage: !roll_dice <number_of_dice> <number_of_sides>")
-
-@roll.error
-async def roll_error(ctx, error):
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Missing arguments. Usage: !roll_dice <number_of_dice> <number_of_sides>")
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send("Invalid argument type. Please ensure both inputs are integers. Usage: !roll_dice <number_of_dice> <number_of_sides>")
- 
-End of reference methods
- """
 #parent group for weatherbot commands
 @bot.group(invoke_without_command=True)
 async def weather(ctx):
     await ctx.send("Available subcommands: report, setdate, getdate. Use '!weather <subcommand>'.")
 
+def get_unix_date():
+    yyyymmdd = bot_date.split("-")
+    y = int(yyyymmdd[0])
+    m = int(yyyymmdd[1])
+    d = int(yyyymmdd[2])
+    #we should assume we're in PST, ergo -28800
+    return int(datetime(y, m, d, tzinfo=tzoffset(None, -28800)).timestamp())
+
+
 @weather.command(name='report', help='Gets current weather for New Portsmouth.')
 async def report(ctx):
-    fictional_city = 'New Portsmouth'
-    real_city = 'Sequim'
-    complete_url = BASE_URL + "appid=" + API_KEY + "&q=" + real_city + "&units=imperial"
-    response = requests.get(complete_url)
-    json = response.json()
-    
-    channel = ctx.message.channel
-    if json["cod"] != "404":
-        async with channel.typing():
-            embed = createEmbed(json, fictional_city, ctx)
-            await channel.send(embed=embed)
-    else:
-        await channel.send("City not found.")
+    try:
+        result = get_current_json()
+        if result != "":
+            message = build_weatherman(result)
+            await ctx.send(message)
+        else:
+            await ctx.send(f"No event found for {bot_date}.")
+    except Exception as e:
+        await ctx.send(f"Error blowing up data: {e}")
 
-@weather.command(name='setdate', help='Set the current date of the weather bot. (It will begin counting up from this date.)')
+def build_weatherman(result):
+    message = "Good morning New Portsmouth! "
+    averages = calculate_averages(result)
+    print(averages)
+    categorize_season()
+    tempType = categorize_temperature(averages)
+    weatherType = categorize_weather(averages)
+
+    return ""
+
+#TODO
+def categorize_temperature(averages):
+    pass
+
+#TODO
+def categorize_weather(averages):
+    pass
+
+#doing it by meteorlogical instead of astronomic seasons
+#ergo each season starts on the 1st of a month 
+def categorize_season():
+    global season
+    yyyymmdd = bot_date.split("-")
+    m = int(yyyymmdd[1])
+    if m >= 3 & m <= 5:
+        season = "spring"
+    elif m >= 6 & m <= 8:
+        season = "summer"
+    elif m >= 9 & m <= 11:
+        season = "autumn"
+    elif m == 12 | m < 3:
+        season = "winter"
+
+def calculate_averages(data):
+    totals = {
+        'temp': 0, 'temp_min': 0, 'temp_max': 0, 'feels_like': 0,
+        'pressure': 0, 'humidity': 0, 'dew_point': 0,
+        'clouds_all': 0, 'wind_speed': 0, 'wind_deg': 0, 'wind_gust': 0
+    }
+    count = 0
+
+    for entry in data:
+        count += 1
+        main = entry['main']
+        totals['temp'] += main['temp']
+        totals['temp_min'] += main['temp_min']
+        totals['temp_max'] += main['temp_max']
+        totals['feels_like'] += main['feels_like']
+        totals['pressure'] += main['pressure']
+        totals['humidity'] += main['humidity']
+        totals['dew_point'] += main['dew_point']
+        totals['clouds_all'] += entry['clouds']['all']
+        wind = entry['wind']
+        totals['wind_speed'] += wind['speed']
+        totals['wind_deg'] += wind['deg']
+        if wind['gust'] != '':  #catching when wind_gust is blank
+            totals['wind_gust'] += float(wind['gust'])
+        #TODO: collapse rain1hr/2hr/3hr and snow1hr/2hr/3hr into one column 'Precipitation' in csv_to_json
+
+    averages = {key: (value / count) for key, value in totals.items()}
+    return averages
+
+
+
+def get_current_json():
+    curMonth = bot_date[:-3] #chops it to yyyy-mm (what the json keys are)
+    result = ""
+    if redis_client.exists(curMonth):  #check if the key exists
+        json_data = redis_client.execute_command('JSON.GET', curMonth)
+        data = json.loads(json_data) #loads it into a list
+        result = [item for item in data if bot_date in item.get('dt_iso')] #fetches every hourly report on this date
+    return result
+
+
+@weather.command(name='setdate', help='Set the current date of the weather bot. (In auto mode, it will begin counting up from this date.)')
 async def setDate(ctx, *, date:str):
     global bot_date
     dt = parse(date)
-    bot_date = dt.strftime('%Y/%m/%d')
+    bot_date = dt.strftime('%Y-%m-%d')
 
 @weather.command(name='getdate', help='Get the current date of the weather bot.')
 async def getDate(ctx):
-    response = "My current date is " + bot_date
+    response = "My current date is " + bot_date + "."
     await ctx.send(response)
 
 @weather.command(name='uptime')
@@ -128,28 +174,6 @@ async def getUptime(ctx):
         change this so it happens automatically?!"""
     formatted_uptime = f"Uptime: {days}d {hours}h {minutes}m {seconds}s"
     await ctx.send(formatted_uptime)
-
-
-#modified from https://stackoverflow.com/questions/63486570/how-to-make-a-weather-command-using-discord-py-v1-4-1
-"""def createEmbed(json, city_name, ctx):
-    print("ctx", ctx)
-    main = json["main"]
-    current_temperature = main["temp"]
-    current_pressure = main["pressure"]
-    current_humidity = main["humidity"]
-    weather = json["weather"]
-    weather_description = weather[0]["description"]
-    embed = discord.Embed(title=f"Weather in {city_name}",
-        color=ctx.guild.me.top_role.color,
-        timestamp=ctx.message.created_at,)
-    embed.add_field(name="Description", value=f"**{weather_description}**", inline=False)
-    embed.add_field(name="Temperature(F)", value=f"**{current_temperature}°F**", inline=False)
-    embed.add_field(name="Humidity(%)", value=f"**{current_humidity}%**", inline=False)
-    embed.add_field(name="Atmospheric Pressure(hPa)", value=f"**{current_pressure}hPa**", inline=False)
-    embed.set_thumbnail(url="https://i.ibb.co/CMrsxdX/weather.png")
-    print(json)
-    embed.set_footer(text=f"Requested by {ctx.author.name}")
-    return embed"""
 
 def createEmbed(json, city_name, ctx):
     overview = json["overview"]
