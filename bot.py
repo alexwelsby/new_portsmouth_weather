@@ -35,7 +35,6 @@ start_time = 0
 uptime = 0
 
 bot_date = '2023-02-01'
-season = 'winter'
 
 ALL_MODES = ["auto", "manual"]
 current_mode = ALL_MODES[0] #will be auto
@@ -84,7 +83,7 @@ def build_weatherman(result):
     message = "Good morning New Portsmouth! "
     averages = calculate_averages(result)
     print(averages)
-    categorize_season()
+    season = categorize_season() #checks from global bot_date so needs nothing passed
     tempType = categorize_temperature(averages)
     weatherType = categorize_weather(averages)
 
@@ -101,17 +100,16 @@ def categorize_weather(averages):
 #doing it by meteorlogical instead of astronomic seasons
 #ergo each season starts on the 1st of a month 
 def categorize_season():
-    global season
     yyyymmdd = bot_date.split("-")
     m = int(yyyymmdd[1])
     if m >= 3 & m <= 5:
-        season = "spring"
+        return "spring"
     elif m >= 6 & m <= 8:
-        season = "summer"
+        return "summer"
     elif m >= 9 & m <= 11:
-        season = "autumn"
-    elif m == 12 | m < 3:
-        season = "winter"
+        return "autumn"
+    else:
+        return "winter"
 
 def calculate_averages(data):
     totals = {
