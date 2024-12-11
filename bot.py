@@ -95,8 +95,7 @@ def build_weatherman(result):
         'temp_min': averages['temp_min'],
         'temp_max': averages['temp_max'],
         'temp': averages['temp'],
-        #'precipitation': averages['precipitation'], haven't added precipitations to json yet
-        'precipitation': 0.25,
+        'precipitation': averages['precipitation'], 
         'season': season,
         'temp_type': temp_type,
         'weather': weather_type,
@@ -159,6 +158,7 @@ def calculate_averages(data):
     totals = {
         'temp': 0, 'temp_min': 0, 'temp_max': 0, 'feels_like': 0,
         'pressure': 0, 'humidity': 0, 'dew_point': 0,
+        'precipitation': 0,
         'clouds_all': 0, 'wind_speed': 0, 'wind_deg': 0, 'wind_gust': 0
     }
     count = 0
@@ -173,16 +173,16 @@ def calculate_averages(data):
         totals['pressure'] += main['pressure']
         totals['humidity'] += main['humidity']
         totals['dew_point'] += main['dew_point']
+        totals['precipitation'] += entry['precipitation'] #custom precipitation field.. keep an eye on this
         totals['clouds_all'] += entry['clouds']['all']
         wind = entry['wind']
         totals['wind_speed'] += wind['speed']
         totals['wind_deg'] += wind['deg']
         if wind['gust'] != '':  #catching when wind_gust is blank
             totals['wind_gust'] += float(wind['gust'])
-        #TODO: collapse rain1hr/2hr/3hr and snow1hr/2hr/3hr into one column 'Precipitation' in csv_to_json
 
     averages = {key: round(value / count, 1) for key, value in totals.items()}
-    print(f"Averages have been categorized as {averages}.")
+    print(f"Averages have been calculated as {averages}.")
     return averages
 
 
