@@ -7,6 +7,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 from dateutil.tz.tz import tzoffset
 from collections import defaultdict
+from report_template import weather_data, weather_report
 
 import discord
 from discord.ext import commands
@@ -21,6 +22,7 @@ PORT = int(os.getenv('PORT'))
 PASSWORD = os.getenv('PASSWORD')
 USERNAME = os.getenv('USERNAME')
 BASE_URL = os.getenv('BASE_URL')
+LOCATION = os.getenv('LOCATION')
 
 #redis database connection
 redis_client = redis.StrictRedis(
@@ -80,14 +82,34 @@ async def report(ctx):
         await ctx.send(f"Error blowing up data: {e}")
 
 def build_weatherman(result):
-    message = "Good morning New Portsmouth! "
     averages = calculate_averages(result)
-    weatherType = categorize_weather(result)
+    weather_type, weather_description = categorize_weather(result)
     season = categorize_season() #checks from global bot_date so needs nothing passed
     print(f"Season has been categorized as {season}.")
-    tempType = categorize_temperature(averages)
+    temp_type = categorize_temperature(averages)
 
-    return (f"for {bot_date} the averages are {averages}, the season is {season}, the weatherType is {weatherType}, and the tempType is {tempType}")
+    data = {
+        'location': LOCATION,
+        'time_period': "day",
+        'weather_description': weather_description, 
+        'temp_min': averages['temp_min'],
+        'temp_max': averages['temp_max'],
+        'temp': averages['temp'],
+        #'precipitation': averages['precipitation'], haven't added precipitations to json yet
+        'precipitation': 0.25,
+        'season': season,
+        'temp_type': temp_type,
+        'weather': weather_type,
+    }
+
+    print(f"Final data structure is {data}.")
+
+    weather_dat = weather_data(data)
+    weatherman = weather_report()
+    return (weatherman.generate_report(weather_dat))
+
+def build_info(data):
+    pass
 
 def categorize_temperature(averages):
     temp = int(averages['temp'])
@@ -106,10 +128,17 @@ def categorize_weather(data):
         weather = entry['weather'][0]['main']
         allWeather.append(weather)
         
-    
-    result = sorted(allWeather, key = allWeather.count, reverse = True)
-    print(f"Weather has been categorized as {result[0]}.")
-    return result[0] #just for now, only returning the most common type of weather over the time period
+    #most common weather condition over this time period
+    top_weather = sorted(allWeather, key = allWeather.count, reverse = True)[0]
+
+    #grabbing a matching description - we don't care about 1:1 matching the IRL conditions on this date
+    #just plausible realism
+    for entry in data:
+        if entry['weather'][0]['main'] == top_weather:
+           description = entry['weather'][0]['description']
+           return top_weather, description
+        
+    return top_weather, None
 
 
 #doing it by meteorlogical instead of astronomic seasons
@@ -117,11 +146,11 @@ def categorize_weather(data):
 def categorize_season():
     yyyymmdd = bot_date.split("-")
     m = int(yyyymmdd[1])
-    if m >= 3 & m <= 5:
+    if m >= 3 and m <= 5:
         return "spring"
-    elif m >= 6 & m <= 8:
+    elif m >= 6 and m <= 8:
         return "summer"
-    elif m >= 9 & m <= 11:
+    elif m >= 9 and m <= 11:
         return "autumn"
     else:
         return "winter"
@@ -152,7 +181,7 @@ def calculate_averages(data):
             totals['wind_gust'] += float(wind['gust'])
         #TODO: collapse rain1hr/2hr/3hr and snow1hr/2hr/3hr into one column 'Precipitation' in csv_to_json
 
-    averages = {key: (value / count) for key, value in totals.items()}
+    averages = {key: round(value / count, 1) for key, value in totals.items()}
     print(f"Averages have been categorized as {averages}.")
     return averages
 
@@ -173,6 +202,8 @@ async def setDate(ctx, *, date:str):
     global bot_date
     dt = parse(date)
     bot_date = dt.strftime('%Y-%m-%d')
+    response = "My current date is " + bot_date + "."
+    await ctx.send(response)
 
 @weather.command(name='getdate', help='Get the current date of the weather bot.')
 async def getDate(ctx):
