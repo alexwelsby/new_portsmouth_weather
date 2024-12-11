@@ -115,9 +115,9 @@ def categorize_temperature(averages):
     temp = int(averages['temp'])
     if temp <= 32:
         return "arctic"
-    elif temp > 32 & temp <= 49:
+    elif temp > 32 and temp <= 49:
         return "cold"
-    elif temp >= 50 & temp <= 75:
+    elif temp >= 50 and temp <= 75:
         return "mild"
     else:
         return "hot"
