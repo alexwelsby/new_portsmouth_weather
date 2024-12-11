@@ -82,20 +82,35 @@ async def report(ctx):
 def build_weatherman(result):
     message = "Good morning New Portsmouth! "
     averages = calculate_averages(result)
-    print(averages)
+    weatherType = categorize_weather(result)
     season = categorize_season() #checks from global bot_date so needs nothing passed
+    print(f"Season has been categorized as {season}.")
     tempType = categorize_temperature(averages)
-    weatherType = categorize_weather(averages)
 
-    return ""
+    return (f"for {bot_date} the averages are {averages}, the season is {season}, the weatherType is {weatherType}, and the tempType is {tempType}")
 
-#TODO
 def categorize_temperature(averages):
-    pass
+    temp = int(averages['temp'])
+    if temp <= 32:
+        return "arctic"
+    elif temp > 32 & temp <= 49:
+        return "cold"
+    elif temp >= 50 & temp <= 75:
+        return "mild"
+    else:
+        return "hot"
 
-#TODO
-def categorize_weather(averages):
-    pass
+def categorize_weather(data):
+    allWeather = []
+    for entry in data:
+        weather = entry['weather'][0]['main']
+        allWeather.append(weather)
+        
+    
+    result = sorted(allWeather, key = allWeather.count, reverse = True)
+    print(f"Weather has been categorized as {result[0]}.")
+    return result[0] #just for now, only returning the most common type of weather over the time period
+
 
 #doing it by meteorlogical instead of astronomic seasons
 #ergo each season starts on the 1st of a month 
@@ -138,6 +153,7 @@ def calculate_averages(data):
         #TODO: collapse rain1hr/2hr/3hr and snow1hr/2hr/3hr into one column 'Precipitation' in csv_to_json
 
     averages = {key: (value / count) for key, value in totals.items()}
+    print(f"Averages have been categorized as {averages}.")
     return averages
 
 
