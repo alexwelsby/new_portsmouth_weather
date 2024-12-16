@@ -1,4 +1,4 @@
-from report_template import weather_data, weather_report
+from helpers.report_template import weather_data, weather_report
 from config import redis_client
 import json
 

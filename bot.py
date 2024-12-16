@@ -32,6 +32,7 @@ async def load_extensions():
         'cogs.weather',
         'cogs.date_management',
         'cogs.uptime',
+        'cogs.events'
     ]
     for ext in extensions:
         await bot.load_extension(ext)
