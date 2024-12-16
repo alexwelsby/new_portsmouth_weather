@@ -14,20 +14,21 @@ def generate_json_event(data):
 
     while time != count:
         temp, max_temp, min_temp = generate_temp(data['min_temp'], data['max_temp'])
-        precip_obj = generate_precipitation(data['min_precipitation'], data['max_precipitation'], temp, data['chance_snow'], data['chance_rain'] )
-        if precip_obj["precipitation"] == 0.0:
-            generate_dry_weather_desc()
+        weather_main, precipitation = generate_precipitation(data['min_precipitation'], data['max_precipitation'], temp, data['chance_snow'], data['chance_rain'] )
+        if precipitation == 0.0:
+            weather_main, weather_description, weather_icon = generate_dry_weather_desc(data['min_cloud_cover'], data['max_cloud_cover'])
         else:
-            generate_wet_weather_desc(precip_obj['weather-main'], precip_obj["precipitation"], temp)
+            weather_description, weather_icon = generate_wet_weather_desc(weather_main, precipitation, temp)
+        
+        time += 1
 
 
 def generate_temp(min, max):
-    realFeel = random.uniform(min, max)
+    realFeel = round(random.uniform(min, max), 1)
     dif = (max - min)/2
-    rand_dif = random.uniform(min, min+dif)
-    min_temp = min+rand_dif
-    rand_dif = random.uniform(max-dif, max)
-    max_temp = max-rand_dif
+    min_temp = round(random.uniform(min, min+dif), 1)
+    max_temp = round(random.uniform(max-dif, max), 1)
+    print(f"realFeel: {realFeel}, max_temp: {max_temp}, min_temp: {min_temp}")
     return realFeel, max_temp, min_temp
 
 def generate_precipitation(min, max, temp, chance_snow, chance_rain):
@@ -39,18 +40,19 @@ def generate_precipitation(min, max, temp, chance_snow, chance_rain):
     if precip > 0.0:
         if snow_roll <= chance_snow and rain_roll <= chance_rain:
             if temp > 32:
-                return {"weather-main": "Rain", "precipitation": precip}
+                return "Rain", precip
             else:
-                return {"weather-main": "Snow", "precipitation": precip}
+                return "Snow", precip
         elif snow_roll <= chance_snow:
-            return {"weather-main": "Snow", "precipitation": precip}
+            return "Snow", precip
         elif rain_roll <= chance_rain:
-             return {"weather-main": "Rain", "precipitation": precip}
-    return {"weather-main": "Clouds", "precipitation": precip}  #in this case we need to generate_dry_weather_desc instead for our weather description
+             return "Rain", precip
+    return "Clouds", precip  #in this case we need to generate_dry_weather_desc instead for our weather description
 
 def generate_wet_weather_desc(type_precip, precip_amount, temp):
     weather_description = ""
     amt = ""
+    weather_icon = ""
     if precip_amount <= 0.1:
         amt = "light"
     elif precip_amount > 0.1 and precip_amount <= 0.3:
@@ -62,30 +64,40 @@ def generate_wet_weather_desc(type_precip, precip_amount, temp):
 
     if type_precip == "Snow":
         weather_description += f"{amt} snow"
+        weather_icon = "13d"
     elif type_precip == "Rain":
         if temp < 32:
-            weather_description = "freezing "
-        weather_description += f"{amt} rain"
+            weather_description = f"freezing {amt} rain"
+            weather_icon = "13d"
+        else:
+            weather_description = f"{amt} rain"
+            weather_icon = "10d"
         
-    return weather_description
+    return weather_description, weather_icon
         
 def generate_dry_weather_desc(min, max):
     rng = random.randint(min, max)
     weather_description = ""
-    condition = "Clouds"
+    weather_main = "Clouds"
+    weather_icon = "04d" #the 'd'/'n' indicator will come later
     if rng < 11:
-        condition = "Clear"
+        weather_main = "Clear"
         weather_description = "sky is clear"
+        weather_icon = "01d"
     if rng >= 11 and rng < 25:
         weather_description = "few clouds"
+        weather_icon = "02d"
     elif rng >= 25 and rng <= 50:
         weather_description = "scattered clouds"
+        weather_icon = "03d"
     elif rng >= 51 and rng <= 84:
         weather_description = "broken clouds"
+        weather_icon = "04d"
     else:
         weather_description = "overcast clouds"
+        weather_icon = "04d"
            
-    return {"weather-main": condition, "weather-description": weather_description }
+    return weather_main, weather_description, weather_icon
 
 def build_json_entry(data): #builds an entry for one segment
                 return {
@@ -119,3 +131,5 @@ def build_json_entry(data): #builds an entry for one segment
                     },
                     "precipitation": float(data["precipitation"]),
                 }
+
+generate_temp(40, 65)
