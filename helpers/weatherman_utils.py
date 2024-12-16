@@ -1,11 +1,8 @@
-from helpers.report_template import weather_data, weather_report
-from config import redis_client
 import json
-
 import discord
-
-from config import LOCATION, SharedState
+from helpers.report_template import weather_data, weather_report
 from helpers.category_utils import get_unix_date, get_day_or_night, categorize_season, categorize_weather, categorize_temperature
+from config import LOCATION, SharedState, redis_client
 
 def build_weatherman(result):
     averages = calculate_averages(result)
@@ -56,14 +53,44 @@ def get_current_json(bot_date, time_period):
     if redis_client.exists(curMonth):  #check if the key exists
         json_data = redis_client.execute_command('JSON.GET', curMonth)
         data = json.loads(json_data) #loads it into a list
-        if (time_period == 'day'):
-            result = [item for item in data if bot_date in item.get('dt_iso')] #fetches every hourly report on this date
-        elif (time_period == 'week'):
-            start_date = get_unix_date(bot_date)
-            end_date = start_date + 604800 #604800 is the # of seconds in a week
-            result = [item for item in data if item.get('dt') >= start_date and item.get('dt') <= end_date] #gets all reports between start and end unix times
+
+        start_date = get_unix_date(bot_date)
+        multiplier = {'day': 1, 'week': 7, 'month': 30}[time_period]
+        end_date = start_date + (86400 * multiplier) #86400 is the # of seconds in a day
+        
+        result = [item for item in data if start_date <= item.get('dt') <= end_date]
+
+        if result[-1].get('dt') >= end_date: #results are ready to rumble
+            print("results ready")
+            return result
+        else: #means our end-date falls outside of our month, ergo we must grab the next one
+            print("results need more time to bake")
+            next_month = get_next_month(curMonth) #gives us a string formatted YYYY-MM of next month
+            print(f"next month {next_month}")
+            if redis_client.exists(next_month):
+                json_data = redis_client.execute_command('JSON.GET', next_month)
+                data = json.loads(json_data) #loads it into a list
+                result.extend(item for item in data if start_date <= item.get('dt') <= end_date)
+                print(f"{result}")
+                return result
+
+
+
+            
+        result = [item for item in data if item.get('dt') >= start_date and item.get('dt') <= end_date] #gets all reports between start and end unix times
     print(result)
     return result
+
+def get_next_month(curMonth):
+    year, month = map(int, curMonth.split('-'))
+    if month == 12:  # Handle year rollover
+        return f"{year + 1}-01"
+    else:
+        month += 1
+        if month < 10:
+            return f"{year}-0{month}"
+        else:
+            return f"{year}-{month}"
 
 def calculate_averages(data):
     totals = {
@@ -95,3 +122,4 @@ def calculate_averages(data):
     averages = {key: round(value / count, 1) for key, value in totals.items()}
     print(f"Averages have been calculated as {averages}.")
     return averages
+
