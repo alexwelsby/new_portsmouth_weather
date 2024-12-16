@@ -141,10 +141,6 @@ def get_day_or_night():
     else:
         return "d"
 
-
-def build_info(data):
-    pass
-
 def categorize_temperature(averages):
     temp = int(averages['temp'])
     if temp <= 32:
@@ -224,9 +220,9 @@ def calculate_averages(data):
 
 
 def get_current_json(time_period):
-    curMonth = bot_date[:-3] #chops it to yyyy-mm (what the json keys are)
+    curMonth = bot_date[:-3] #chops it to yyyy-mm (so it matches the json file names)
     result = ""
-    if redis_client.exists(curMonth):  #check if the key exists
+    if redis_client.exists(curMonth):  #check if the key/json exists
         json_data = redis_client.execute_command('JSON.GET', curMonth)
         data = json.loads(json_data) #loads it into a list
         if (time_period == 'day'):
@@ -235,7 +231,6 @@ def get_current_json(time_period):
             start_date = get_unix_date(bot_date)
             end_date = start_date + 604800 #604800 is the # of seconds in a week
             result = [item for item in data if item.get('dt') >= start_date and item.get('dt') <= end_date] #gets all reports between start and end unix times
-    print(result)
     return result
 
 
