@@ -11,7 +11,7 @@ class date_management(commands.Cog):
         async with ctx.typing():
             try:
                 dt = parse(date)
-                SharedState.write_date(SharedState, dt.strftime('%Y-%m-%d'))
+                SharedState.write_date(dt.strftime('%Y-%m-%d'))
                 response = f"((OOC: My date has been set to {SharedState.bot_date} (YYYY-MM-DD).))"
                 await ctx.send(response)
             except Exception as e:

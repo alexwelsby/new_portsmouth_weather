@@ -31,24 +31,34 @@ class SharedState:
     time_period = 'week'
     start_time = datetime.now()
     bot_date = '2023-02-01'
+    all_events = [ ] #first should be unix date of the start of the event, last is unix date of end of event
     #should add error handling later...
-    def read_date():
-        date = Path('bot_date.txt').read_text()
+
+    @classmethod
+    def read_date(cls):
+        date = Path('bot_date.txt').read_text().strip()
         valid = re.search(r"^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$", date)
         if (valid):
-            return date
+            cls.bot_date = date
         else:
             print("Error in read_date: bot_date.txt does not appear to have a valid date of structure YYYY-MM-DD. Has it been modified? Fallback date set to 2023-02-01.")
-            return '2023-02-01' #our fallback
+            cls.bot_date = '2023-02-01' #our fallback
+        return cls.bot_date
     
-    bot_date = read_date()
+    @classmethod
+    def write_date(cls, date):
+        with open("bot_date.txt", "w") as file:
+            file.write(date)
+        cls.bot_date = cls.read_date()
+
+    def add_event(self, event):
+        self.all_events.append(event)
+        print(self.all_events)
     
-    def write_date(self, date):
-        file = open("bot_date.txt", "w") 
-        file.write(date) 
-        file.close()
-        global bot_date
-        bot_date = self.read_date()
+    def end_event(self, redis_path):
+        for event in self.all_events:
+            if event.event_redis_key == redis_path:
+                self.all_events.remove(event)
 
     
     

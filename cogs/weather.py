@@ -1,6 +1,7 @@
 from discord.ext import commands
 from config import SharedState, LOCATION
-from helpers.weatherman_utils import build_weatherman, create_embed, get_current_json
+from helpers.weatherman_utils import build_weatherman, create_embed
+from helpers.redis_utils import get_current_json
 
 class Weather(commands.Cog):
     def __init__(self, bot):
