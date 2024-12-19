@@ -7,10 +7,6 @@ from helpers.category_utils import calculate_uptime
 start_time = 0
 uptime = 0
 
-bot_date = '2023-02-01'
-time_period = 'week'
-
-
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)

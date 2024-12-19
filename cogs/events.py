@@ -1,5 +1,5 @@
 from discord.ext import commands
-from helpers.json_builder import generate_json_event
+from helpers.event_builder import generate_json_event
 
 class events(commands.Cog):
     def __init__(self,bot):
