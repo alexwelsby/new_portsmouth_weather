@@ -8,14 +8,12 @@ def generate_json_event(data):
     time_period = data['time_period']
     EVENT_yyyymm = "EVENT_" + data['start_date'][:-3] #this will be the redis key
     start_time = get_unix_date(data['start_date']) #going to add 8 hours to this per loop
-
     num_slices = get_num_of_slices(3, time_period) #3 = minimum of 3 reports per day (matches our json)
-    json_data = get_current_json(data['start_date'], data['time_period'])
+    json_data = get_current_json(data['start_date'], None, data['time_period'])
     fields_to_replace = generate_8hr_slices(start_time, num_slices, data)
     new_json = update_json(json_data, fields_to_replace)
 
     end_time = json_data[-1]["dt"] #unix time of the last entry
-
     add_to_redis(EVENT_yyyymm, new_json) #adds this event to the database
     add_event(EVENT_yyyymm, start_time, end_time) #adds an event object to the sharedState (start_time and end_time are in unix)
     

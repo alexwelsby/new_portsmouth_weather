@@ -1,5 +1,7 @@
 from discord.ext import commands
 from helpers.event_builder import generate_json_event
+from helpers.redis_utils import remove_from_redis
+from config import SharedState
 
 class events(commands.Cog):
     def __init__(self,bot):
@@ -58,6 +60,19 @@ class events(commands.Cog):
         else:
             generate_json_event(params_list)
             await ctx.send(f"Weather event created with max-temp: {params_list['max_temp']} and min-temp: {params_list['min_temp']}")
+
+    @commands.command(name='end_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    async def end_current_event(self, ctx, args_redis_key:str):
+        outcome = remove_from_redis(args_redis_key)
+        await ctx.send(outcome)
+
+    @commands.command(name='list_events', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    async def list_events(self, ctx):
+        all_events = SharedState.get_events(SharedState)
+        print(f"all events? {all_events}")
+        await ctx.send(all_events)
+
+
 
 async def setup(bot):
     await bot.add_cog(events(bot))
