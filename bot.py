@@ -1,5 +1,6 @@
 # bot.py
 import discord
+import time 
 from discord.ext import commands
 from config import TOKEN, SharedState
 from helpers.category_utils import calculate_uptime
@@ -15,10 +16,20 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    uptime = calculate_uptime()
+    days, hours, minutes, seconds = calculate_uptime()
     bot_date = SharedState.read_date()
     populate_events_vars()
-    print(f'Bot\'s current date is {bot_date}. Current uptime: {uptime} (Uptime is used to decide when to advance the calendar in Auto mode.)')
+    print(f'Bot\'s current date is {bot_date}. Current uptime: {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds (Uptime is used to decide when to advance the calendar in Auto mode.)')
+    #check_for_rollover(days)
+
+async def check_for_rollover(days):
+    print("are we stuck here?!")
+    while True:
+        new_days, hours, minutes, seconds = calculate_uptime()
+        if days != new_days:
+            SharedState.rollover_date()
+            days = new_days
+        time.sleep(300) #wait for 5 minutes before checking again
 
 #parent group for weatherbot commands
 @bot.group(invoke_without_command=True)

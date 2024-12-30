@@ -2,6 +2,7 @@ import os
 import redis
 from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
+from dateutil.parser import parse
 from pathlib import Path
 import re
 
@@ -48,7 +49,7 @@ class SharedState:
             print("Error in read_date: bot_date.json does not appear to have a valid date of structure YYYY-MM-DD. Has it been modified? Fallback date set to 2023-02-01.")
             cls.bot_date = '2023-02-01' #our fallback
         return cls.bot_date
-    
+
     @classmethod
     def write_date(cls, date):
         offset = timezone(timedelta(seconds=-28800))
@@ -63,6 +64,13 @@ class SharedState:
                 file.write(f"{key}={value}\n")
 
         cls.bot_date = cls.read_date() #updates our variables to match the txt file we just wrote
+    
+    @classmethod
+    def rollover_date(cls):
+        bot_date = cls.read_date()
+        date = datetime.fromisoformat(bot_date) + timedelta(days=1)  #adds one day to our date
+        cls.write_date(date.strftime('%Y-%m-%d'))
+        return cls.read_date()
 
     def add_event(self, event):
         self.all_events.append(event)
