@@ -20,7 +20,8 @@ class date_management(commands.Cog):
     @commands.command(name='get_date', help='Get the current date of the weather bot.')
     async def get_date(self, ctx):
         async with ctx.typing():
-            response = f"((OOC: My current date is {SharedState.bot_date} (YYYY-MM-DD).))"
+            date = SharedState.read_date()
+            response = f"((OOC: My current date is {date} (YYYY-MM-DD).))"
             await ctx.send(response)
 
 async def setup(bot):

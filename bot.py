@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from config import TOKEN, SharedState
 from helpers.category_utils import calculate_uptime
+from helpers.redis_utils import populate_events_vars
 
 start_time = 0
 uptime = 0
@@ -15,8 +16,9 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
     uptime = calculate_uptime()
-    print(f'Bot\'s start time has been set to {SharedState.start_time}. Current uptime: {uptime} (Uptime is used to decide when to advance the calendar in Auto mode.)')
-
+    bot_date = SharedState.read_date()
+    populate_events_vars()
+    print(f'Bot\'s current date is {bot_date}. Current uptime: {uptime} (Uptime is used to decide when to advance the calendar in Auto mode.)')
 
 #parent group for weatherbot commands
 @bot.group(invoke_without_command=True)

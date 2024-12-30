@@ -4,3 +4,6 @@ class Event:
         self.event_redis_key = event_redis_key
         self.start_unix = start_unix
         self.end_unix = end_unix
+
+    def __str__(self):
+        return f"redis_key:{self.event_redis_key} start_time:{self.start_unix} end_time:{self.end_unix}"
