@@ -67,8 +67,15 @@ class SharedState:
     
     @classmethod
     def rollover_date(cls):
+        offset = timezone(timedelta(seconds=-28800))
         bot_date = cls.read_date()
-        date = datetime.fromisoformat(bot_date) + timedelta(days=1)  #adds one day to our date
+        next_day = (datetime.fromisoformat(bot_date) + timedelta(days=1)).replace(tzinfo=timezone(timedelta(seconds=-28800)))  #adds one day to our date
+        if next_day.timestamp() >= 1733587200.0: #can't go beyond our last day in our data
+            unix_date = datetime.strptime(bot_date, '%Y-%m-%d').timestamp()
+            date = (unix_date - 1733587200) + 1672531200 #lands us at our time difference from the first day in the data
+            date = datetime.fromtimestamp(date).replace(tzinfo=timezone(timedelta(seconds=-28800)))
+        else:
+            date = next_day
         cls.write_date(date.strftime('%Y-%m-%d'))
         return cls.read_date()
 
