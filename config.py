@@ -79,8 +79,12 @@ class SharedState:
         cls.write_date(date.strftime('%Y-%m-%d'))
         return cls.read_date()
 
-    def add_event(self, event):
-        self.all_events.append(event)
+    def add_event(self, new_event):
+        for event in self.all_events:
+            if event.event_redis_key == new_event.event_redis_key and event.start_unix == new_event.start_unix and event.rnd_unix == new_event.end_unix:
+                print(self.all_events)
+                return
+        self.all_events.append(new_event)
         print(self.all_events)
     
     def end_event(self, redis_path):
@@ -88,9 +92,11 @@ class SharedState:
             if event.event_redis_key == redis_path:
                 self.all_events.remove(event)
 
-    def get_event(self):
+    def get_events(self):
+        s = ""
         for event in self.all_events:
-            print(event)
+            s += str(event) + '\n'
+        return s
 
     
     

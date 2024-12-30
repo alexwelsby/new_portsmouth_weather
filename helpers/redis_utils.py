@@ -4,13 +4,21 @@ from helpers.event import Event
 import redis
 import ujson as json
 
-def add_to_redis(name, data):
+def add_to_redis(key, data):
     try:
-        redis_client.execute_command('JSON.SET', name, '.', json.dumps(data))
-        print(f"{name} stored using RedisJSON.")
+        redis_client.execute_command('JSON.SET', key, '.', json.dumps(data))
+        print(f"{key} stored using RedisJSON.")
     except redis.exceptions.ResponseError:
-        redis_client.set(name, json.dumps(data))
-        print("{name} stored as a string.")
+        redis_client.set(key, json.dumps(data))
+        print(f"{key} stored as a string.")
+
+def remove_from_redis(key):
+    try:
+        redis_client.execute_command('JSON.DEL', key)
+        return f"Deleted {key} from redis."
+    except redis.exceptions.ResponseError:
+        return f"Key not found: Did you mistype it?"
+        
 
 def populate_events_vars(): #assuming our bot went offline, we need to double-check with the redis database and re-add them to our vars
     all_keys = redis_client.keys('*')
@@ -24,7 +32,7 @@ def populate_events_vars(): #assuming our bot went offline, we need to double-ch
         #repeat code but i am tired. avoiding circular imports
         event = Event(event_redis_key=key, start_unix=start_unix, end_unix=end_unix)
         SharedState.add_event(SharedState, event)
-        SharedState.get_event(SharedState)
+        print(SharedState.get_events(SharedState))
         
 def get_current_json(bot_date, event_key, time_period): 
     if event_key != None:
