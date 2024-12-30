@@ -1,2 +1,2 @@
-bot_date=2023-04-09
+bot_date=2023-01-01
 last_updated=2024-12-29
