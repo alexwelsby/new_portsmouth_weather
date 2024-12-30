@@ -24,5 +24,13 @@ class date_management(commands.Cog):
             response = f"((OOC: My current date is {date} (YYYY-MM-DD).))"
             await ctx.send(response)
 
+    @commands.command(name='rollover_date', help='Get the current date of the weather bot.')
+    async def rollover_date(self, ctx):
+        print("GIRL WHAT IS HAPPENING")
+        async with ctx.typing():
+            date = SharedState.rollover_date()
+            response = f"((OOC: Date has been rolled over. My current date is {date} (YYYY-MM-DD).))"
+            await ctx.send(response)
+
 async def setup(bot):
     await bot.add_cog(date_management(bot))
