@@ -6,22 +6,24 @@ from helpers.event import Event
 
 def generate_json_event(data):
     time_period = data['time_period']
+    EVENT_yyyymm = "EVENT_" + data['start_date'][:-3] #this will be the redis key
+    start_time = get_unix_date(data['start_date']) #going to add 8 hours to this per loop
+
     num_slices = get_num_of_slices(3, time_period) #3 = minimum of 3 reports per day (matches our json)
-
     json_data = get_current_json(data['start_date'], data['time_period'])
-
-    fields_to_replace = generate_8hr_slices(num_slices, data)
-
+    fields_to_replace = generate_8hr_slices(start_time, num_slices, data)
     new_json = update_json(json_data, fields_to_replace)
 
-    EVENT_yyyymm = "EVENT_" + data['start_date'][:-3]
-    start_time = get_unix_date(data['start_date']) #going to add 8 hours to this per loop
     end_time = json_data[-1]["dt"] #unix time of the last entry
 
     add_to_redis(EVENT_yyyymm, new_json) #adds this event to the database
-    event = Event(event_redis_key=EVENT_yyyymm, start_unix=start_time, end_unix=end_time)
+    add_event(EVENT_yyyymm, start_time, end_time) #adds an event object to the sharedState (start_time and end_time are in unix)
     
+
+def add_event(EVENT_yyyymm, start_time, end_time):
+    event = Event(event_redis_key=EVENT_yyyymm, start_unix=start_time, end_unix=end_time)
     SharedState.add_event(SharedState, event)
+    SharedState.get_event(SharedState)
 
 def get_num_of_slices(num_per_day, time_period):
     if time_period == "day":
@@ -34,7 +36,7 @@ def get_num_of_slices(num_per_day, time_period):
     return num_per_day
 
 
-def generate_8hr_slices(count, data):
+def generate_8hr_slices(start_time, count, data):
     all_outputs = []
     time = 0
     while time != count:
@@ -50,12 +52,11 @@ def generate_8hr_slices(count, data):
         }
         output['temp'], output['max_temp'], output['min_temp'] = generate_temp(data['min_temp'], data['max_temp'])
         output['weather_main'], output['precipitation'] = generate_precipitation(data['min_precipitation'], data['max_precipitation'], output['temp'], data['chance_snow'], data['chance_rain'] )
-        print(f"where's the problem {output['weather_main']}")
         if output['precipitation'] == 0.00:
             output['weather_main'], output['weather_description'], output['weather_icon'] = generate_dry_weather_desc(data['min_cloud_cover'], data['max_cloud_cover'])
         else:
             output['weather_description'], output['weather_icon'] = generate_wet_weather_desc(output)
-        print(f"temp: {output['temp']}, max_temp: {output['max_temp']}, min_temp: {output['min_temp']}, weather_icon: {output['weather_icon']}, weather_main: {output['weather_main']}, weather_description: {output['weather_description']}, precipitation: {output['precipitation']}")
+        #print(f"temp: {output['temp']}, max_temp: {output['max_temp']}, min_temp: {output['min_temp']}, weather_icon: {output['weather_icon']}, weather_main: {output['weather_main']}, weather_description: {output['weather_description']}, precipitation: {output['precipitation']}")
         all_outputs.append(output)
         start_time += 28800 #adding 8 hours to our current time (so we're ready for the next loop)
         time += 1
@@ -103,7 +104,7 @@ def generate_precipitation(min_precip, max_precip, temp, chance_snow, chance_rai
         elif rain_roll <= chance_rain:
             return "Rain", precip
         else:
-            return "Clouds", 0.00 # we failed our rolls, we got clouds
+            return "Clouds", 0.00 # we failed our rolls, we got clouds and no precip
     else: 
         return "Clouds", 0.00 #in this case we need to generate_dry_weather_desc instead for our weather description
 

@@ -1,4 +1,3 @@
-import json
 import discord
 from helpers.report_template import weather_data, weather_report
 from helpers.category_utils import get_day_or_night, categorize_season, categorize_weather, categorize_temperature

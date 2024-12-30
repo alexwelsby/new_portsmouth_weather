@@ -1,7 +1,7 @@
 import os
 import redis
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import re
 
@@ -36,20 +36,33 @@ class SharedState:
 
     @classmethod
     def read_date(cls):
-        date = Path('bot_date.txt').read_text().strip()
+        date = ""
+        with open('bot_date.txt', 'r') as file:
+            lines = file.readlines()
+            data = dict(line.strip().split('=') for line in lines) #the label will become the key for the dict
+            date = data['bot_date']
         valid = re.search(r"^\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])$", date)
         if (valid):
             cls.bot_date = date
         else:
-            print("Error in read_date: bot_date.txt does not appear to have a valid date of structure YYYY-MM-DD. Has it been modified? Fallback date set to 2023-02-01.")
+            print("Error in read_date: bot_date.json does not appear to have a valid date of structure YYYY-MM-DD. Has it been modified? Fallback date set to 2023-02-01.")
             cls.bot_date = '2023-02-01' #our fallback
         return cls.bot_date
     
     @classmethod
     def write_date(cls, date):
+        offset = timezone(timedelta(seconds=-28800))
+
+        data = {
+            'bot_date': date,
+            'last_updated': datetime.now(offset).strftime('%Y-%m-%d'),
+        }
+
         with open("bot_date.txt", "w") as file:
-            file.write(date)
-        cls.bot_date = cls.read_date()
+            for key, value in data.items():
+                file.write(f"{key}={value}\n")
+
+        cls.bot_date = cls.read_date() #updates our variables to match the txt file we just wrote
 
     def add_event(self, event):
         self.all_events.append(event)
@@ -59,6 +72,10 @@ class SharedState:
         for event in self.all_events:
             if event.event_redis_key == redis_path:
                 self.all_events.remove(event)
+
+    def get_event(self):
+        for event in self.all_events:
+            print(event)
 
     
     
