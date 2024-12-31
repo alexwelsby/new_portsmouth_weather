@@ -21,7 +21,7 @@ def generate_json_event(data):
 def add_event(EVENT_yyyymm, start_time, end_time):
     event = Event(event_redis_key=EVENT_yyyymm, start_unix=start_time, end_unix=end_time)
     SharedState.add_event(SharedState, event)
-    SharedState.get_event(SharedState)
+    SharedState.get_events(SharedState)
 
 def get_num_of_slices(num_per_day, time_period):
     if time_period == "day":

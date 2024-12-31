@@ -33,6 +33,17 @@ def populate_events_vars(): #assuming our bot went offline, we need to double-ch
         event = Event(event_redis_key=key, start_unix=start_unix, end_unix=end_unix)
         SharedState.add_event(SharedState, event)
         print(SharedState.get_events(SharedState))
+
+def get_event_json(key):
+    if redis_client.exists(key):
+        json_data = redis_client.execute_command('JSON.GET', key)
+        #big block o text
+        data = json.loads(json_data)
+        #makes it prettier/adds indents/etc
+        data = json.dumps(data, indent=4)
+        return data
+    else:
+        return None
         
 def get_current_json(bot_date, event_key, time_period): 
     if event_key != None:
