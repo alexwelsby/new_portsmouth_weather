@@ -1,6 +1,8 @@
 from discord.ext import commands
+import discord
+import io
 from helpers.event_builder import generate_json_event
-from helpers.redis_utils import remove_from_redis
+from helpers.redis_utils import remove_from_redis,get_event_json
 from config import SharedState
 
 class events(commands.Cog):
@@ -68,9 +70,24 @@ class events(commands.Cog):
 
     @commands.command(name='list_events', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
     async def list_events(self, ctx):
-        all_events = SharedState.get_events(SharedState)
+        all_events = SharedState.get_events()
         print(f"all events? {all_events}")
         await ctx.send(all_events)
+
+    @commands.command(name='download_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    async def download_event(self, ctx, args_redis_key:str):
+        print("HALP")
+        json = get_event_json(args_redis_key)
+        print(json)
+        if json == None:
+            await ctx.send("No event found at that key. Did you misspell it? Use !list_events to double-check all available keys.")
+        else:
+            #no disk usage for this, just in-memory?
+            with io.StringIO() as file:
+                file.write(json)
+                file.seek(0)
+                json_file = discord.File(file, filename=f"{args_redis_key}.json")
+                await ctx.send(f"Json file found for {args_redis_key} - and now, the weather.", file=json_file)
 
 
 
