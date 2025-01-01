@@ -4,13 +4,17 @@ from helpers.event import Event
 import redis
 import ujson as json
 
+def json_loads(data):
+    json_data = json.loads(data.decode('utf-8'))
+    return json_data
+
 def add_to_redis(key, data):
     try:
         redis_client.execute_command('JSON.SET', key, '.', json.dumps(data))
-        print(f"{key} stored using RedisJSON.")
+        return f"{key} stored using RedisJSON."
     except redis.exceptions.ResponseError:
         redis_client.set(key, json.dumps(data))
-        print(f"{key} stored as a string.")
+        return f"{key} stored as a string."
 
 def remove_from_redis(key):
     try:
