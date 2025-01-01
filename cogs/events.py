@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 import io
 from helpers.event_builder import generate_json_event
-from helpers.redis_utils import remove_from_redis,get_event_json
+from helpers.redis_utils import remove_from_redis,get_event_json, json_loads, add_to_redis
 from config import SharedState
 
 class events(commands.Cog):
@@ -85,9 +85,34 @@ class events(commands.Cog):
             #no disk usage for this, just in-memory?
             with io.StringIO() as file:
                 file.write(json)
-                file.seek(0)
+                file.seek(0) #resetting the file buffer to the start
                 json_file = discord.File(file, filename=f"{args_redis_key}.json")
                 await ctx.send(f"Json file found for {args_redis_key} - and now, the weather.", file=json_file)
+
+    @commands.command(name='overwrite_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    async def overwrite_event(self, ctx, args_redis_key:str):
+        found = False
+        for event in SharedState.all_events:
+            print(event.event_redis_key)
+            if event.event_redis_key == args_redis_key:
+                found = True
+        if not found:
+            await ctx.send("ERROR: The event key you passed does not exist as an Event in the Redis database. This command is intended for overwriting and fine-tuning existing events that are already in the database, not creating new events. Please use !create_event with your desired parameters first.")
+            return
+        
+        if not ctx.message.attachments:
+            await ctx.send("ERROR: You forgot to attach a .json file to this command.")
+            return
+        #getting the first attachment - could change this to allow bulk attachments later
+        attachment = ctx.message.attachments[0]
+        if not attachment.filename.endswith('.json'):
+            await ctx.send("ERROR: The attached file is not a .json. Please attach a .json file.")
+            return
+        
+        file_content = await attachment.read()
+        response = add_to_redis(args_redis_key, json_loads(file_content))
+        await ctx.send(response)
+        
 
 
 
