@@ -35,7 +35,7 @@ def check_if_event():
     unix_date = get_unix_date(SharedState.read_date())
     if (len(SharedState.all_events) > 0):
         for event in SharedState.all_events:
-            if unix_date > event.start_unix and unix_date < event.end_unix:
+            if unix_date >= event.start_unix and unix_date <= event.end_unix:
                 print(f"event found; redis key {event.event_redis_key}")
                 return event.event_redis_key
     return None
