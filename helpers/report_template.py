@@ -5,9 +5,10 @@ class report_template:
     temp_min = 0.0
     temp_max = 0.0
     temp = 0.0
+    humidity = 0.0
     precipitation = 0.0
 
-    allData = [location, time_period, weather_description, temp, temp_min, temp_max, precipitation]
+    allData = [location, time_period, weather_description, temp, temp_min, temp_max, precipitation, humidity]
 
     @staticmethod
     def load_template():
@@ -139,6 +140,7 @@ class weather_data:
         self.temp_min = data.get("temp_min", 70.0)
         self.temp_max = data.get("temp_max", 75.0)
         self.temp = data.get("temp", 73.0)
+        self.humidity = data.get("humidity", 0.0)
         self.precipitation = data.get("precipitation", 0.0)
         self.season = data.get("season", "spring")
         self.temp_type = data.get("temp_type", "mild")
@@ -156,6 +158,7 @@ class weather_report:
                 temp_min=weather_data.temp_min,
                 temp_max=weather_data.temp_max,
                 temp=weather_data.temp,
+                humidity=weather_data.humidity,
                 precipitation=weather_data.precipitation,
             )
     

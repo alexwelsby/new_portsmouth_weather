@@ -1,8 +1,9 @@
 from discord.ext import commands
 from config import SharedState, LOCATION
-from helpers.weatherman_utils import build_weatherman, create_embed
+from helpers.weatherman_utils import build_weatherman, create_embed, debug_descriptions
 from helpers.redis_utils import get_current_json
 from helpers.category_utils import get_unix_date
+import io, discord
 
 class Weather(commands.Cog):
     def __init__(self, bot):
@@ -28,6 +29,19 @@ class Weather(commands.Cog):
                     await ctx.send(embed=embed)
                 else:
                     await ctx.send(f"No event found for {SharedState.bot_date}.")
+        except Exception as e:
+            await ctx.send(f"Error blowing up data: {e}")
+
+    @commands.command(name='debug_list_reports', help='Lists all possible single weather report strings.')
+    async def debug_list_reports(self, ctx):
+        try:
+            async with ctx.typing():
+                all_reports = debug_descriptions()
+                with io.StringIO() as file:
+                    file.write(all_reports)
+                    file.seek(0) #resetting the file buffer to the start
+                    txt_file = discord.File(file, filename=f"debug_descriptions.txt")
+                    await ctx.send(f"Here's a txt file of all possible weather reports, with placeholder info.", file=txt_file)
         except Exception as e:
             await ctx.send(f"Error blowing up data: {e}")
 

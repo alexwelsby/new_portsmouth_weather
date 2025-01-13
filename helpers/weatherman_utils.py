@@ -77,3 +77,48 @@ def calculate_averages(data):
     print(f"Averages have been calculated as {averages}.")
     return averages
 
+def debug_descriptions(): #using this to proofread written descriptions for awkward verbiage/grammatical errors across all possible conditions lol
+    seasons = [ "spring", "summer", "autumn", "winter"]
+    temps = ["arctic", "cold", "mild", "hot"]
+    conditions = ["Clear", "Clouds", "Rain", "Snow"]
+    clouds_descript = ["few clouds", "scattered clouds", "broken clouds", "overcast clouds"]
+    clear_descript = ["sky is clear"]
+    snow_descript = ["light snow", "moderate snow", "heavy snow", "sleet", "light shower sleet", "shower sleet", "light rain and snow", "rain and snow", "light shower snow", "shower snow", "heavy shower snow"]
+    rain_descript = ["light rain", "moderate rain", "heavy intensity rain", "very heavy rain", "extreme rain", "freezing rain", "light intensity shower rain", "shower rain", "heavy intensity shower rain", "ragged shower rain"]
+    allOutputs = ""
+    condition_descriptions = {
+        "Clear": clear_descript,
+        "Clouds": clouds_descript,
+        "Snow": snow_descript,
+        "Rain": rain_descript
+    }
+
+    for season in seasons:
+        allOutputs += season + "\n"
+        for temp in temps:
+            allOutputs += temp + "\n"
+            for condition in conditions:
+                allOutputs += condition + "\n"
+                for description in condition_descriptions[condition]:
+                    data = {
+                        'location': LOCATION,
+                        'time_period': SharedState.time_period,
+                        'weather_description': description, 
+                        'temp_min': 65.0,
+                        'temp_max': 75.0,
+                        'temp': 70.0,
+                        'humidity': 88.3,
+                        'precipitation': 0.1, 
+                        'season': season,
+                        'temp_type': temp,
+                        'weather': condition,
+                        'weather_icon': '13d',
+                    }
+                    weather_dat = weather_data(data)
+                    #print(weather_dat)
+                    weatherman = weather_report()
+                    allOutputs += weatherman.generate_report(weather_dat) + "\n"
+                    #print(allOutputs)
+
+    return allOutputs
+
