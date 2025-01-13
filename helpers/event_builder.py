@@ -1,7 +1,7 @@
 import random
 from helpers.category_utils import get_unix_date
 from config import SharedState
-from helpers.redis_utils import add_to_redis, get_current_json
+from helpers.redis_utils import add_to_redis, get_current_json, get_event_json
 from helpers.event import Event
 
 def generate_json_event(data):

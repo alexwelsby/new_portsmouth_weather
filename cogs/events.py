@@ -23,6 +23,7 @@ class events(commands.Cog):
     }
         
     @commands.command(name='create_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    @commands.has_role('GUIDE')
     async def create_event(self, ctx, *args):
         params_list = self.params_list
         for arg in args:
@@ -64,17 +65,20 @@ class events(commands.Cog):
             await ctx.send(f"Weather event created with max-temp: {params_list['max_temp']} and min-temp: {params_list['min_temp']}")
 
     @commands.command(name='end_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    @commands.has_role('GUIDE')
     async def end_current_event(self, ctx, args_redis_key:str):
         outcome = remove_from_redis(args_redis_key)
         await ctx.send(outcome)
 
     @commands.command(name='list_events', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    @commands.has_role('GUIDE')
     async def list_events(self, ctx):
         all_events = SharedState.get_events()
         print(f"all events? {all_events}")
         await ctx.send(all_events)
 
     @commands.command(name='download_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    @commands.has_role('GUIDE')
     async def download_event(self, ctx, args_redis_key:str):
         print("HALP")
         json = get_event_json(args_redis_key)
@@ -90,6 +94,7 @@ class events(commands.Cog):
                 await ctx.send(f"Json file found for {args_redis_key} - and now, the weather.", file=json_file)
 
     @commands.command(name='overwrite_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
+    @commands.has_role('GUIDE')
     async def overwrite_event(self, ctx, args_redis_key:str):
         found = False
         for event in SharedState.all_events:
