@@ -115,10 +115,8 @@ def debug_descriptions(): #using this to proofread written descriptions for awkw
                         'weather_icon': '13d',
                     }
                     weather_dat = weather_data(data)
-                    #print(weather_dat)
                     weatherman = weather_report()
                     allOutputs += weatherman.generate_report(weather_dat) + "\n"
-                    #print(allOutputs)
 
     return allOutputs
 
