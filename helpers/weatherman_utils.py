@@ -3,7 +3,9 @@ from helpers.report_template import weather_data, weather_report
 from helpers.category_utils import get_day_or_night, categorize_season, categorize_weather, categorize_temperature
 from config import LOCATION, SharedState
 
-def build_weatherman(result):
+def build_weatherman(result, time_period):
+    if (time_period == "month" or time_period == "week"):
+        pass
     averages = calculate_averages(result)
     weather_type, weather_description, weather_icon = categorize_weather(result)
     season = categorize_season() #checks from global bot_date so needs nothing passed
@@ -73,7 +75,9 @@ def calculate_averages(data):
         if wind['gust'] != '':  #catching when wind_gust is blank
             totals['wind_gust'] += float(wind['gust'])
 
-    averages = {key: round(value / count, 1) for key, value in totals.items()}
+    averages = {key: round(value / count, 1) for key, value in totals.items() if key != 'precipitation'}
+    averages['precipitation'] = totals['precipitation'] #just because the weather reports sound more natural if they describe overall precipitation...
+    #does mean our variable name is inaccurate though
     print(f"Averages have been calculated as {averages}.")
     return averages
 

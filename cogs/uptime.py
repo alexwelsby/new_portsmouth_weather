@@ -6,6 +6,7 @@ class Uptime(commands.Cog):
         self.bot = bot
     
     @commands.command(name='uptime', help='Shows the current uptime of the weatherbot.')
+    @commands.has_role('GUIDE')
     async def get_uptime(self, ctx):
         async with ctx.typing():
             days, hours, minutes, seconds = calculate_uptime()

@@ -94,7 +94,7 @@ class report_template:
                     "cold": {
                         "Clear":"Chilly but beautiful is how I'd describe the weather coming up this {time_period}. The {weather_description}, with lows at {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
                         "Clouds":"We're expecting some typical winter weather this week, with low temperatures and {weather_description}. Our temperatures will range between lows at {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
-                        "Rain":"Cold {weather_description} is coming to {location} this {time_period}. {precipitation} inches are expected to drop, with temperatures ranging from lows at {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
+                        "Rain":"Cold {weather_description} is coming to {location} this {time_period}. {precipitation} inches of precipitation are expected to drop by the end of this {time_period}, with temperatures ranging from lows at {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
                         "Snow":"Mother Nature is cooking us up a winter wonderland this {time_period}, as we're headed into {weather_description} that's forecast to drop {precipitation} inches on beloved {location}. Our temperatures are going to drop to our lows at {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
 
                     },

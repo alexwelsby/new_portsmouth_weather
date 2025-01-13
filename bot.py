@@ -8,6 +8,7 @@ from helpers.redis_utils import populate_events_vars
 
 start_time = 0
 uptime = 0
+auto_advance = True
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -20,10 +21,10 @@ async def on_ready():
     bot_date = SharedState.read_date()
     populate_events_vars()
     print(f'Bot\'s current date is {bot_date}. Current uptime: {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds (Uptime is used to decide when to advance the calendar in Auto mode.)')
-    bot.loop.create_task(check_for_rollover(days))
+    bot.loop.create_task(check_for_rollover(days)) #if auto_advance is true, advances the current date by 1
 
 async def check_for_rollover(days):
-    while True:
+    while auto_advance:
         new_days, hours, minutes, seconds = calculate_uptime()
         if days != new_days:
             date = SharedState.rollover_date()
