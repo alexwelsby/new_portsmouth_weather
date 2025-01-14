@@ -23,6 +23,8 @@ async def on_ready():
     print(f'Bot\'s current date is {bot_date}. Current uptime: {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds (Uptime is used to decide when to advance the calendar in Auto mode.)')
     bot.loop.create_task(check_for_rollover(days)) #if auto_advance is true, advances the current date by 1
 
+
+
 async def check_for_rollover(days):
     while auto_advance:
         new_days, hours, minutes, seconds = calculate_uptime()
@@ -36,6 +38,14 @@ async def check_for_rollover(days):
 @bot.group(invoke_without_command=True)
 async def weather(ctx):
     await ctx.send("Available subcommands: report <day|week>, set_date <date>, get_date. Use '!weather <subcommand> <optional:args>'.")
+
+
+@bot.command(name='sync', description='Owner only')
+@commands.is_owner()
+async def sync(ctx:discord.Interaction):
+    await bot.tree.sync()
+    print('Command tree synced.')
+    await ctx.response.send_message('You must be the owner to use this command!')
 
 async def load_extensions():
     extensions = [
@@ -51,6 +61,7 @@ async def main():
     async with bot:
         await load_extensions()
         await bot.start(TOKEN)
+        await bot.tree.sync()
 
 if __name__ == '__main__':
     import asyncio

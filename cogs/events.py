@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+from discord import app_commands
 import io
 from helpers.event_builder import generate_json_event
 from helpers.redis_utils import remove_from_redis,get_event_json, json_loads, add_to_redis
@@ -21,9 +22,19 @@ class events(commands.Cog):
         'chance_rain': 0.0,
         'chance_snow': 0.0,
     }
+
+    #duplicate code but it's nearly midnight.
+    def is_guide():
+        #checks if the user has the GUIDE role
+        async def predicate(interaction: discord.Interaction) -> bool:
+            guide_role = discord.utils.get(interaction.user.roles, name="GUIDE")
+            return guide_role is not None
+        return app_commands.check(predicate)
         
-    @commands.command(name='create_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
-    @commands.has_role('GUIDE')
+    #fix this
+    @app_commands.command(name='create_event', description='Creates a weather event with the given parameters and puts it in the redis database.')
+    @app_commands.describe(start_date="<YYYY/MM/DD>", time_period="<day|week|month>", max_temp="<# in degrees F>", min_temp="<# in degrees F>", min_precipitation="<# in inches>", max_precipitation="<# in inches>", min_cloud_cover="<%>", max_cloud_cover="<%>", chance_rain="%", chance_snow="<%>")
+    @is_guide()
     async def create_event(self, ctx, *args):
         params_list = self.params_list
         for arg in args:
@@ -64,59 +75,64 @@ class events(commands.Cog):
             generate_json_event(params_list)
             await ctx.send(f"Weather event created with max-temp: {params_list['max_temp']} and min-temp: {params_list['min_temp']}")
 
-    @commands.command(name='end_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
-    @commands.has_role('GUIDE')
-    async def end_current_event(self, ctx, args_redis_key:str):
-        outcome = remove_from_redis(args_redis_key)
-        await ctx.send(outcome)
+    @app_commands.command(name='remove_event', description='Deletes the event with the given redis key.')
+    @app_commands.describe(args_redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
+    @is_guide()
+    async def remove_event(self,  interaction: discord.Interaction, args_redis_key:str):
+        response = remove_from_redis(args_redis_key)
+        await interaction.response.send_message(response)
 
-    @commands.command(name='list_events', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
-    @commands.has_role('GUIDE')
-    async def list_events(self, ctx):
+    @app_commands.command(name='list_events', description='Lists all currently scheduled events with their keys and unix start and end times.')
+    @is_guide()
+    async def list_events(self, interaction: discord.Interaction):
         all_events = SharedState.get_events()
-        print(f"all events? {all_events}")
-        await ctx.send(all_events)
+        await interaction.response.send_message(all_events)
 
-    @commands.command(name='download_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
-    @commands.has_role('GUIDE')
-    async def download_event(self, ctx, args_redis_key:str):
-        print("HALP")
+    @app_commands.command(name='download_event', description='Downloads the raw data of the event at the given redis key.')
+    @app_commands.describe(args_redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
+    @is_guide()
+    async def download_event(self, interaction: discord.Interaction, args_redis_key:str):
         json = get_event_json(args_redis_key)
         print(json)
         if json == None:
-            await ctx.send("No event found at that key. Did you misspell it? Use !list_events to double-check all available keys.")
+            await interaction.response.send_message("No event found at that key. Did you misspell it? Use !list_events to double-check all available keys.")
         else:
             #no disk usage for this, just in-memory?
             with io.StringIO() as file:
                 file.write(json)
                 file.seek(0) #resetting the file buffer to the start
                 json_file = discord.File(file, filename=f"{args_redis_key}.json")
-                await ctx.send(f"Json file found for {args_redis_key} - and now, the weather.", file=json_file)
+                await interaction.response.send_message(f"Json file found for {args_redis_key} - and now, the weather.", file=json_file)
 
-    @commands.command(name='overwrite_event', help='Creates an event that takes the following parameters: start_date:<YYYY:MM:DD> max_temp:<#> min_temp:<#> max_precipitation:<#> min_precipitation:<#> time_period:<day|week|month> max_cloud_cover:<%> min_cloud_cover:<%> chance_rain:<%> chance_snow:<%>')
-    @commands.has_role('GUIDE')
-    async def overwrite_event(self, ctx, args_redis_key:str):
+    @commands.command(name='overwrite_event', help='Upload a .json attachment to replace a given event\'s raw data. (WARNING: MAKE SURE YOU KNOW WHAT YOU\'RE DOING! YOU CAN BREAK YOUR EVENT.)')
+    @app_commands.describe(args_redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
+    @is_guide()
+    async def overwrite_event(self,  interaction: discord.Interaction, args_redis_key:str):
         found = False
         for event in SharedState.all_events:
             print(event.event_redis_key)
             if event.event_redis_key == args_redis_key:
                 found = True
         if not found:
-            await ctx.send("ERROR: The event key you passed does not exist as an Event in the Redis database. This command is intended for overwriting and fine-tuning existing events that are already in the database, not creating new events. Please use !create_event with your desired parameters first.")
+            await interaction.response.send_message("ERROR: The event key you passed does not exist as an Event in the Redis database. This command is intended for overwriting and fine-tuning existing events that are already in the database, not creating new events. Please use !create_event with your desired parameters first.")
             return
         
-        if not ctx.message.attachments:
-            await ctx.send("ERROR: You forgot to attach a .json file to this command.")
-            return
+        async for message in interaction.channel.history(limit=10):
+            if message.author == interaction.user and message.attachments:
+                attachment = message.attachments[0]
+
+            if not attachment:
+                await interaction.response.send_message("ERROR: You forgot to attach a .json file to this command.")
+                return
         #getting the first attachment - could change this to allow bulk attachments later
-        attachment = ctx.message.attachments[0]
-        if not attachment.filename.endswith('.json'):
-            await ctx.send("ERROR: The attached file is not a .json. Please attach a .json file.")
-            return
+
+            if not attachment.filename.endswith('.json'):
+                await interaction.response.send_message("ERROR: The attached file is not a .json. Please attach a .json file.")
+                return
         
-        file_content = await attachment.read()
-        response = add_to_redis(args_redis_key, json_loads(file_content))
-        await ctx.send(response)
+            file_content = await attachment.read()
+            response = add_to_redis(args_redis_key, json_loads(file_content))
+            await interaction.response.send_message(response)
         
 
 
