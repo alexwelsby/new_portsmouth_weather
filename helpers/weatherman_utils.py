@@ -17,9 +17,11 @@ def build_weatherman(result, time_period):
         'weather_description': weather_description, 
         'temp_min': averages['temp_min'],
         'temp_max': averages['temp_max'],
-        'temp': averages['temp'],
+        'temp': averages['feels_like'],
         'humidity': averages['humidity'],
         'precipitation': averages['precipitation'], 
+        'wind_speed': averages['wind_speed'],
+        'dew_point': averages['dew_point'],
         'season': season,
         'temp_type': temp_type,
         'weather': weather_type,
@@ -30,7 +32,7 @@ def build_weatherman(result, time_period):
 
     weather_dat = weather_data(data)
     weatherman = weather_report()
-    return data, weatherman.generate_report(weather_dat)
+    return data, weatherman.generate_report(weather_dat).replace("this day", "today")
 
 def create_embed(data, weatherman_report, ctx):
     weather_icon = data['weather_icon'][:-1] + get_day_or_night() #chops off the day/night indicator (we're going to match it to current day/night in the PNW)
@@ -39,11 +41,13 @@ def create_embed(data, weatherman_report, ctx):
         color=ctx.guild.me.top_role.color,
         timestamp=ctx.message.created_at,)
     embed.set_author(name="New Portsmouth Weather", icon_url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
-    embed.add_field(name="Description", value=f"**{weatherman_report}**", inline=False)
-    embed.add_field(name="Temperature(F)", value=f"**{data["temp"]}°F**", inline=True)
-    embed.add_field(name="Humidity(%)", value=f"**{data['humidity']}%**", inline=True)
-    embed.add_field(name="Average high (F)", value=f"**{data["temp_max"]}°F**", inline=True)
-    embed.add_field(name="Average low (F)", value=f"**{data["temp_min"]}°F**", inline=True)
+    embed.add_field(name="Description", value=f"{weatherman_report}", inline=False)
+    embed.add_field(name="Average low", value=f"{data["temp_min"]}°F", inline=True)
+    embed.add_field(name="Average high", value=f"{data["temp_max"]}°F", inline=True)
+    embed.add_field(name="Average RealFeel", value=f"{data["temp"]}°F", inline=True)
+    embed.add_field(name="Dew point", value=f"{data['dew_point']}°F", inline=True)
+    embed.add_field(name="Humidity", value=f"{data['humidity']}%", inline=True)
+    embed.add_field(name="Wind speed", value=f"{data['wind_speed']} MPH", inline=True)
     embed.set_thumbnail(url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
     embed.set_footer(text=f"Requested by {ctx.author.name}")
     return embed
