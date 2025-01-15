@@ -41,7 +41,7 @@ def create_embed(data, weatherman_report, interaction):
         color=interaction.guild.me.top_role.color,
         timestamp=discord.utils.utcnow(),)
     embed.set_author(name=f"{data['location']} Weather", icon_url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
-    embed.add_field(name="Description", value=f"{weatherman_report}", inline=False)
+    embed.add_field(name="\u200b", value=f"{weatherman_report}", inline=False)
     embed.add_field(name="Average low", value=f"{data["temp_min"]}°F", inline=True)
     embed.add_field(name="Average high", value=f"{data["temp_max"]}°F", inline=True)
     embed.add_field(name="Average RealFeel", value=f"{data["temp"]}°F", inline=True)
