@@ -80,7 +80,7 @@ def calculate_averages(data):
             totals['wind_gust'] += float(wind['gust'])
 
     averages = {key: round(value / count, 1) for key, value in totals.items() if key != 'precipitation'}
-    averages['precipitation'] = totals['precipitation'] #just because the weather reports sound more natural if they describe overall precipitation...
+    averages['precipitation'] = round(totals['precipitation'], 1) #just because the weather reports sound more natural if they describe overall precipitation...
     #does mean our variable name is inaccurate though
     print(f"Averages have been calculated as {averages}.")
     return averages

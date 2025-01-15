@@ -52,6 +52,8 @@ After generating every value expected for your given timeframe, it will then re-
 
 Note that dew point cannot be specified as a parameter currently. I could add dew point customization if requested, but as of now the dew point is calculated based on the humidity and temperature of a given date as that felt the most realistic (and was based on the formula [here](https://learnmetrics.com/dew-point-calculator-chart-formula/).) 
 
+I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c878257550d) in event_builder.py to calculate the RealFeel.
+
 - **/list_events**
   Lists all the current events stored in the bot's memory, their redis keys, and the Unix times at which they start and stop.
 
