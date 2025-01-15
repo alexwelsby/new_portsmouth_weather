@@ -50,7 +50,7 @@ So, for example, if you don't have a min_windspeed argument, the bot will search
 
 After generating every value expected for your given timeframe, it will then re-populate a copy of the json that's stored on the back-end and re-insert this copy into the back end with a key of 'EVENT_YYYY-MM'.
 
-Note that dew point cannot be specified as a parameter currently. I could add dew point customization if requested, but as of now the dew point is calculated based on the humidity and temperature of a given date as that felt the most realistic (and was based on the formula (https://learnmetrics.com/dew-point-calculator-chart-formula/)[here].) 
+Note that dew point cannot be specified as a parameter currently. I could add dew point customization if requested, but as of now the dew point is calculated based on the humidity and temperature of a given date as that felt the most realistic (and was based on the formula [here](https://learnmetrics.com/dew-point-calculator-chart-formula/).) 
 
 - **/list_events**
   Lists all the current events stored in the bot's memory, their redis keys, and the Unix times at which they start and stop.
