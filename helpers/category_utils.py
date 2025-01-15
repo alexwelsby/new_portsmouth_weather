@@ -1,14 +1,17 @@
 from datetime import datetime
-from dateutil.tz.tz import tzoffset
 from config import SharedState
 import pytz
+from datetime import datetime, timedelta
 
-#literally so embarrassed luv i had what i felt was an elegant 5 line solution for this
-#and it turns out the library just does it. itself. in one line. not sure why i didn't think of this
-#well whatever. i won't remove the method. i love her too much
+
 def get_unix_date(date):
-    #we should assume we're in PST, ergo -28800
-    return int(datetime.strptime(date, '%Y-%m-%d').timestamp())
+    #our data happens at 1am, 9am, etc, so...
+    naive_date = datetime.strptime(date, '%Y-%m-%d') + timedelta(minutes=60)
+    #we're in PST, ergo
+    tz = pytz.timezone('US/Pacific')
+    aware_date = tz.localize(naive_date)
+    #unix timestamp as int so it can be compared
+    return int(aware_date.timestamp())
 
 def get_day_or_night():
     tz = pytz.timezone('US/Pacific')
