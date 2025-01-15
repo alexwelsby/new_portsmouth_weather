@@ -4,7 +4,7 @@ Tune in to the KRKN to hear the latest in weather...
 
 ![A screenshot of a weather bot's embed news report](screen1.png "A screenshot of a weather bot's embed news report")
 
-The New Portsmouth Weather Bot provides on-demand weather reports to players. Weather reports change each day, as well, providing an illusion of a constantly changing climate (and providing some nice references for our players who are new to the pacific northwest's climate, as well!)
+The New Portsmouth Weather Bot provides on-demand weather reports to players. Weather reports change each day, as well, providing an illusion of a constantly changing climate (and providing some nice references for our players who are new to the pacific northwest!)
 
 This weather bot has an internal date that it uses to fetch either historical or customized weather data, depending on whether the current date falls inside the range of a custom event (see Event commands section). This internal date is intentionally obsfucated from regular players, but can be accessed and changed by mods using the date management commands.
 
@@ -40,7 +40,7 @@ Oh, man.
 
 Event commands are largely how mods will be able to customize the weather experience for the roleplay setting. I've tried to make it so the creation is as detailed as possible to allow for a high level of customizability.
 
-- **/create_event start_date:<YYYY:MM:DD|July 7 2023|etc> time_period:<day|week|month> chance_rain:<0-100> chance_snow:<0-100> min_temp:<in fahrenheit> max_temp:<in fahrenheit> min_precipitation:<in inches> max_precipitation:<in inches> min_cloud_cover:<0-100> max_cloud_cover:<0-100> min_humidity:<0-100> max-humidity:<0-100> min_windspeed:<0-100> max_windspeed:<0-100>**
+- **/create_event start_date:<YYYY:MM:DD|July 7 2023|etc> time_period:<day|week|month> chance_rain:<0-100> chance_snow:<0-100> min_temp:<#, fahrenheit> max_temp:<#, fahrenheit> min_precipitation:<#, inches> max_precipitation:<#, inches> min_cloud_cover:<0-100> max_cloud_cover:<0-100> min_humidity:<0-100> max-humidity:<0-100> min_windspeed:<0-100> max_windspeed:<0-100>**
 
 Do note that all 'min' values MUST be less than or equal to their 'max' values or the bot will be unhappy.
 
