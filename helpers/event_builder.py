@@ -9,24 +9,17 @@ def generate_json_event(param_data):
     time_period = param_data['time_period']
     #print(f"time period set as {time_period}")
     EVENT_yyyymm = "EVENT_" + param_data['start_date'][:-3] #this will be the redis key
-    #print(f"EVENT_yyyymm set as {EVENT_yyyymm}")
     start_time = get_unix_date(param_data['start_date']) #going to add 8 hours to this per loop
-    print(f"start_time set as {start_time}")
     num_slices = get_num_of_slices(3, time_period) #3 = minimum of 3 reports per day (matches our json)
-    #print(f"num_slices set as {num_slices}")
     json_data = get_current_json(param_data['start_date'], None, param_data['time_period'])
-    #print(f"json data got")
     param_data = fill_none_values(json_data, param_data) #if the user left out any parameters, this populates them from the historical data
-    #print(f"param_data is {param_data}")
     fields_to_replace = generate_8hr_slices(start_time, num_slices, param_data)
-    #print(f"{fields_to_replace[0]}")
     new_json = update_json(json_data, fields_to_replace)
-    print(new_json)
     end_time = json_data[-1]["dt"] #unix time of the last entry
     add_to_redis(EVENT_yyyymm, new_json) #adds this event to the database
-    print("add_to_redis successful")
     add_event(EVENT_yyyymm, start_time, end_time) #adds an event object to the sharedState (start_time and end_time are in unix)
 
+#so inelegant. and yet. it is what is
 def fill_none_values(json_data, param_data):
     if param_data['min_temp'] is None:
         param_data['min_temp'] = min(entry["main"]["temp_min"] for entry in json_data)
@@ -52,7 +45,23 @@ def fill_none_values(json_data, param_data):
         param_data['chance_rain'] = ((sum(1 for entry in json_data if entry["weather"][0]["main"] == "Rain")) / len(json_data)) * 100
     if param_data['chance_snow'] is None:
         param_data['chance_snow'] = ((sum(1 for entry in json_data if entry["weather"][0]["main"] == "Snow")) / len(json_data)) * 100
+
+    param_data = verify_min_max(param_data)
     
+    return param_data
+
+
+def verify_min_max(param_data):
+    keys = list(param_data.keys())[4:]
+    for i in range(0, len(keys), 2):
+            min_key = keys[i]
+            max_key = keys[i + 1]
+            min_value = param_data[min_key]
+            max_value = param_data[max_key]
+
+            if min_value is not None and max_value is not None and min_value > max_value:
+                param_data[max_key] = param_data[min_key] #treating it like the user input both as the same value
+
     return param_data
 
     

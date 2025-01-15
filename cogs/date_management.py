@@ -35,6 +35,7 @@ class date_management(commands.Cog):
         async with interaction.channel.typing():
             key = SharedState.check_if_event(SharedState.bot_date)
             date = SharedState.rollover_date()
+            print(date)
             event_happening = 'There is no active weather event. Use /create_event if you\'d like an event for this date.'
             if (key != None):
                 event_happening = "I'm currently trying to stay within a mod-set weather event. The key of the event is {key}; use !download_event {key} if you'd like to see the raw data, or !end_event {key} if you'd like the event to end."

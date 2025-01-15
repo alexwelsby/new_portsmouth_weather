@@ -20,8 +20,11 @@ class Weather(commands.Cog):
         try:
             async with interaction.channel.typing():
                 bot_date = SharedState.read_date()
+                print(bot_date)
                 event_key = SharedState.check_if_event(bot_date) #returns either the key or none
+                print(event_key)
                 result = get_current_json(bot_date, event_key, time_period)
+                print(result)
                 if result != "":
                     data, report = build_weatherman(result, time_period)
                     embed = create_embed(data, report, interaction)

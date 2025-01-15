@@ -73,14 +73,14 @@ I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c87
 - **/debug_list_reports**
   Prompts the bot to send you a text file of EVERY SINGLE POSSIBLE WEATHER REPORT. I used it to proofread reports.
 
-  # NOTE FOR NON-AM READERS WHO WOULD LIKE TO MODIFY THIS FOR THEIR OWN SETTING
-  This bot was made explicitly for the AM setting and uses a Redis database to store and modify Openweatherapi json files. 
+  ## NOTE FOR ROLEPLAYERS WHO WOULD LIKE TO MODIFY THIS FOR THEIR OWN ROLEPLAY SERVER
+  This bot uses a Redis database to store and modify Openweatherapi json files. 
   
-  In order to modify it for your own setting, you'll need to get your own weather data in json format from [Openweatherapi](https://home.openweathermap.org/marketplace) - for usability you'll need to split this json into separate YYYY-MM jsons yourself, and likely pick and choose how many entries you want to keep, as the default openweatherapi hourly data will blow up your redis database big and round from the sheer volume. For what it's worth, this bot was programmed with the assumption that you'd be using 8-hour segments - one around midnight, one around 8am, and one around 4pm for each day.
+  In order to modify it for your own setting, you'll need to get your own weather data in json format from [Openweatherapi](https://home.openweathermap.org/marketplace) - for usability you'll need to split this json into separate YYYY-MM jsons yourself, and likely pick and choose how many entries you want to keep, as the default openweatherapi hourly data will blow up your redis database big and round from the sheer volume. For what it's worth, this bot was programmed with the assumption that you'd be using 8-hour segments - one around midnight, one around 8am, and one around 4pm for each day, as this captures the lows/mids/high temperatures fairly well. Do remember to use YYYY-MM as your keys, as otherwise this bot will not work properly.
 
-  Upload all your monthly data to the Free plan of the [Redislabs database](https://app.redislabs.com/#/databases)
+  Upload all your monthly json files to the Free plan of the [Redislabs database](https://app.redislabs.com/#/databases). You can see an example on how to upload to Redis using Python in [helpers/redis_utils.py](https://github.com/alexwelsby/new_portsmouth_weather/blob/main/helpers/redis_utils.py).
 
-  Create an .env file that looks like this (REMEMBER TO INCLUDE .ENV IN YOUR .GITIGNORE):
+  Create an .env file in the same directory as bot.py. Structure it like this (REMEMBER TO INCLUDE THE .ENV IN YOUR .GITIGNORE):
 
   TOKEN=your Discord Token
 
@@ -106,6 +106,6 @@ I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c87
 
 
 
-While the location and timezone aren't sensitive information, I wanted to keep them in the .env to make it easier for others to build their own weather bot.
+While the location, timezone, first & last days and offset aren't sensitive information, I wanted to keep them in the .env to make it easier for others to adapt the bot to their needs.
   
 
