@@ -60,7 +60,8 @@ def verify_min_max(param_data):
             max_value = param_data[max_key]
 
             if min_value is not None and max_value is not None and min_value > max_value:
-                param_data[max_key] = param_data[min_key] #treating it like the user input both as the same value
+                max_value = max_value + ((min_value - max_value) * 2) #max plus twice the difference
+                param_data[max_key] = max_value #treating it like the user input both as the same value
 
     return param_data
 
