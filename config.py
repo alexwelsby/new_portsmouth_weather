@@ -10,7 +10,7 @@ load_dotenv()
 #discord tokennn
 TOKEN = os.getenv('DISCORD_TOKEN')
 #Discord guild
-GUILD = os.getenv('GUILD')
+GUILD = int(os.getenv('GUILD'))
 
 #redis stuff
 PORT = int(os.getenv('PORT'))
@@ -24,9 +24,9 @@ BASE_URL = os.getenv('BASE_URL')
 LOCATION = os.getenv('LOCATION')
 TIMEZONE = os.getenv('PYTZ_TIMEZONE')
 ADMIN_ROLE = os.getenv('ROLE')
-OFFSET = os.getenv('OFFSET')
-FIRST_DAY = os.getenv('FIRST_DAY')
-LAST_DAY = os.getenv('LAST_DAY')
+OFFSET = int(os.getenv('OFFSET'))
+FIRST_DAY = int(os.getenv('FIRST_DAY'))
+LAST_DAY = int(os.getenv('LAST_DAY'))
 
 redis_client = redis.StrictRedis(
     host=BASE_URL,
@@ -60,11 +60,10 @@ class SharedState:
 
     @classmethod
     def write_date(cls, date):
-        offset = timezone(timedelta(seconds=TIMEZONE))
-
+        tz = pytz.timezone(TIMEZONE)
         data = {
             'bot_date': date,
-            'last_updated': datetime.now(offset).strftime('%Y-%m-%d'),
+            'last_updated': datetime.now(tz).strftime('%Y-%m-%d'),
         }
 
         with open("bot_date.txt", "w") as file:
@@ -77,36 +76,34 @@ class SharedState:
     #difference is in seconds
     def localize_to_location(date, time_dif):
         local_tz = pytz.timezone(TIMEZONE)
-        naive_date = datetime.fromisoformat(date)
-        date = local_tz.localize(naive_date) + timedelta(seconds=time_dif)
-        return date.timestamp()
+        naive_date = datetime.fromisoformat(date) + timedelta(seconds=time_dif)
+        localized_date = local_tz.localize(naive_date)
+        return int(localized_date.timestamp())
     
     @classmethod
     def rollover_date(cls):
         bot_date = cls.read_date() #making sure we're updated to the latest txt file
         next_day = cls.localize_to_location(bot_date, 86400)  #adds one day to our date
         if next_day >= LAST_DAY: #can't go beyond our last day in our data
-            unix_date = datetime.strptime(bot_date, '%Y-%m-%d').timestamp()
+            unix_date = int(datetime.strptime(bot_date, '%Y-%m-%d').timestamp())
             date = (unix_date - LAST_DAY) + FIRST_DAY #lands us at our time difference from the first day in the data
-            date = datetime.fromtimestamp(date).replace(tzinfo=timezone(timedelta(seconds=TIMEZONE)))
+            date = cls.localize_to_location(date, -28800) #returns unix time
         else:
-            restart_event = cls.rolling_out_of_event(next_day.strftime('%Y-%m-%d')) #can either return None or the unix timestamp of the event start
+            restart_event = cls.rolling_out_of_event(datetime.fromtimestamp(next_day).strftime('%Y-%m-%d')) #can either return None or the unix timestamp of the event start
             if restart_event != None: #checking to make sure we're not rolling out of the current event prematurely (ie, before a mod ends it)
-                date = datetime.fromtimestamp(restart_event)
+                date = restart_event
             else:
                 date = next_day
-        cls.write_date(date.strftime('%Y-%m-%d'))
+        cls.write_date(datetime.fromtimestamp(date).strftime('%Y-%m-%d'))
         return cls.read_date()
 
     def add_event(self, new_event):
         for event in self.all_events:
             if event.event_redis_key == new_event.event_redis_key and event.start_unix == new_event.start_unix and event.end_unix == new_event.end_unix:
-                print(self.all_events)
                 return
             elif event.event_redis_key == new_event.event_redis_key:
                 event = new_event
         self.all_events.append(new_event)
-        print(self.all_events)
     
     def remove_event(self, redis_path):
         if len(self.all_events) > 0:
@@ -126,11 +123,10 @@ class SharedState:
     @classmethod
     def check_if_event(cls, date):
         #and we're avoiding using the utils to prevent a circular import. cry cry
-        unix_date = cls.localize_to_location(date, OFFSET) #360 seconds
+        unix_date = cls.localize_to_location(date, OFFSET) #3600 seconds
         if (len(cls.all_events) > 0):
             for event in cls.all_events:
                 if unix_date >= event.start_unix and unix_date <= event.end_unix:
-                    print(f"event found; redis key {event.event_redis_key}")
                     return event.event_redis_key
         return None
     
