@@ -24,7 +24,7 @@ class report_template:
                     },
                     "hot": {
                         "Clear": "Summer has come early as {location} has some beautiful but HOT weather to look forward to this {time_period}, with clear skies and temperatures ranging from lows of {temp_min}°F to highs of {temp_max}°F, and a RealFeel of {temp}°F.",
-                        "Clouds": "It will be hot and muggy this {time_period}, so keep hydrated! We're looking at {weather_description} and lows of {temp_min}°F to highs of {temp_max}°F. Our average RealFeel is {temp}°F.",
+                        "Clouds": "It will be hot this {time_period}, so keep hydrated! We're looking at {weather_description} and lows of {temp_min}°F to highs of {temp_max}°F. Our average RealFeel is {temp}°F.",
                         "Rain": "Tropical rains are headed our way, with {precipitation} inches expected to drop before the {time_period} is out. We're going to have lows of {temp_min}°F to highs of {temp_max}°F, with a RealFeel of {temp}°F.",
                         "Snow":"It's HOT and SNOWING?! The end of days has come to {location}, clearly. This {time_period} we can expect {weather_description} with lows of {temp_min}°F and highs of {temp_max}°F, with a RealFeel of {temp}°F.",
                     },

@@ -34,12 +34,12 @@ def build_weatherman(result, time_period):
     weatherman = weather_report()
     return data, weatherman.generate_report(weather_dat).replace("this day", "today")
 
-def create_embed(data, weatherman_report, ctx):
+def create_embed(data, weatherman_report, interaction):
     weather_icon = data['weather_icon'][:-1] + get_day_or_night() #chops off the day/night indicator (we're going to match it to current day/night in the PNW)
-
-    embed = discord.Embed(title=f"This {data['time_period']}'s weather in {data['location']}",
-        color=ctx.guild.me.top_role.color,
-        timestamp=ctx.message.created_at,)
+    title = f"This {data['time_period']}'s weather in {data['location']}".replace("This day", "Today")
+    embed = discord.Embed(title=title,
+        color=interaction.guild.me.top_role.color,
+        timestamp=discord.utils.utcnow(),)
     embed.set_author(name="New Portsmouth Weather", icon_url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
     embed.add_field(name="Description", value=f"{weatherman_report}", inline=False)
     embed.add_field(name="Average low", value=f"{data["temp_min"]}°F", inline=True)
@@ -49,7 +49,7 @@ def create_embed(data, weatherman_report, ctx):
     embed.add_field(name="Humidity", value=f"{data['humidity']}%", inline=True)
     embed.add_field(name="Wind speed", value=f"{data['wind_speed']} MPH", inline=True)
     embed.set_thumbnail(url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
-    embed.set_footer(text=f"Requested by {ctx.author.name}")
+    embed.set_footer(text=f"Requested by {interaction.user.name}")
     return embed
 
 def calculate_averages(data):

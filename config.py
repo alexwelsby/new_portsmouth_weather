@@ -2,9 +2,8 @@ import os
 import redis
 from dotenv import load_dotenv
 from datetime import datetime, timezone, timedelta
-from dateutil.parser import parse
-from pathlib import Path
 import re
+import pytz
 
 load_dotenv()
 
@@ -87,16 +86,22 @@ class SharedState:
 
     def add_event(self, new_event):
         for event in self.all_events:
-            if event.event_redis_key == new_event.event_redis_key and event.start_unix == new_event.start_unix and event.rnd_unix == new_event.end_unix:
+            if event.event_redis_key == new_event.event_redis_key and event.start_unix == new_event.start_unix and event.end_unix == new_event.end_unix:
                 print(self.all_events)
                 return
+            elif event.event_redis_key == new_event.event_redis_key:
+                event = new_event
         self.all_events.append(new_event)
         print(self.all_events)
     
-    def end_event(self, redis_path):
-        for event in self.all_events:
-            if event.event_redis_key == redis_path:
-                self.all_events.remove(event)
+    def remove_event(self, redis_path):
+        if len(self.all_events) > 0:
+            for event in self.all_events:
+                if event.event_redis_key == redis_path:
+                    self.all_events.remove(event)
+                    return 'Removed event from bot memory.'
+        else:
+            return 'No such event found in bot memory.'
 
     def get_events(self):
         s = ""
@@ -106,7 +111,11 @@ class SharedState:
     
     @classmethod
     def check_if_event(cls, date):
-        unix_date = datetime.fromisoformat(date).timestamp()
+        #our data is at a 1hr offset from midnight, ergo...
+        #and we're avoiding using the utils to prevent a circular import. cry cry
+        date = (datetime.fromisoformat(date) + timedelta(minutes=60))
+        tz = pytz.timezone('US/Pacific')
+        unix_date = int(tz.localize(date).timestamp())
         if (len(cls.all_events) > 0):
             for event in cls.all_events:
                 if unix_date >= event.start_unix and unix_date <= event.end_unix:
