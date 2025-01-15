@@ -40,7 +40,7 @@ def create_embed(data, weatherman_report, interaction):
     embed = discord.Embed(title=title,
         color=interaction.guild.me.top_role.color,
         timestamp=discord.utils.utcnow(),)
-    embed.set_author(name="New Portsmouth Weather", icon_url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
+    embed.set_author(name="{LOCATION} Weather", icon_url=f"https://openweathermap.org/img/wn/{weather_icon}.png")
     embed.add_field(name="Description", value=f"{weatherman_report}", inline=False)
     embed.add_field(name="Average low", value=f"{data["temp_min"]}°F", inline=True)
     embed.add_field(name="Average high", value=f"{data["temp_max"]}°F", inline=True)
@@ -80,7 +80,7 @@ def calculate_averages(data):
             totals['wind_gust'] += float(wind['gust'])
 
     averages = {key: round(value / count, 1) for key, value in totals.items() if key != 'precipitation'}
-    averages['precipitation'] = totals['precipitation'] #just because the weather reports sound more natural if they describe overall precipitation...
+    averages['precipitation'] = round(totals['precipitation'], 1) #just because the weather reports sound more natural if they describe overall precipitation...
     #does mean our variable name is inaccurate though
     print(f"Averages have been calculated as {averages}.")
     return averages

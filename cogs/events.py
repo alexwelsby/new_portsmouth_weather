@@ -14,7 +14,6 @@ class events(commands.Cog):
         self.bot = bot
 
         
-    #fix this
     @app_commands.command(name='create_event', description='Creates a weather event with the given parameters and puts it in the redis database.')
     @app_commands.describe(start_date="<YYYY/MM/DD>",time_period="<day|week|month>", chance_rain="<Percent chance for rain on a given day>", 
                            chance_snow="<Percent chance for snow on a given day>",
@@ -46,9 +45,7 @@ class events(commands.Cog):
         min_windspeed: Optional[float] = None,
         max_windspeed: Optional[float] = None,
         ):
-
         start_date = parse(start_date).strftime('%Y-%m-%d')
-
         params_list =  {
             'start_date': start_date,
             'time_period': time_period,
@@ -127,7 +124,7 @@ class events(commands.Cog):
                 await interaction.response.send_message(f"Json file found for {redis_key}: and now, the weather.", file=json_file)
                 return
 
-    @commands.command(name='overwrite_event', help='Upload a .json attachment to replace a given event\'s raw data. (WARNING: MAKE SURE YOU KNOW WHAT YOU\'RE DOING! YOU CAN BREAK YOUR EVENT.)')
+    @commands.command(name='overwrite_event', description='Upload a .json attachment to replace a given event\'s raw data. (WARNING: MAKE SURE YOU KNOW WHAT YOU\'RE DOING! YOU CAN BREAK YOUR EVENT.)')
     @app_commands.describe(redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
     @is_guide()
     async def overwrite_event(self,  interaction: discord.Interaction, redis_key:str):

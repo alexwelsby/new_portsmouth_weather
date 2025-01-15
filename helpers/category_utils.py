@@ -1,20 +1,20 @@
 from datetime import datetime
-from config import SharedState
+from config import SharedState, TIMEZONE, OFFSET
 import pytz
 from datetime import datetime, timedelta
 
 
 def get_unix_date(date):
     #our data happens at 1am, 9am, etc, so...
-    naive_date = datetime.strptime(date, '%Y-%m-%d') + timedelta(minutes=60)
+    naive_date = datetime.strptime(date, '%Y-%m-%d') + timedelta(seconds=OFFSET)
     #we're in PST, ergo
-    tz = pytz.timezone('US/Pacific')
-    aware_date = tz.localize(naive_date)
+    tz = pytz.timezone(TIMEZONE)
+    local_date = tz.localize(naive_date)
     #unix timestamp as int so it can be compared
-    return int(aware_date.timestamp())
+    return int(local_date.timestamp())
 
 def get_day_or_night():
-    tz = pytz.timezone('US/Pacific')
+    tz = pytz.timezone(TIMEZONE)
     stringified = str(datetime.now(tz)).split(' ')[1][:2] #will get us the hours of a current day in 24hr format
     hours = int(stringified)
     if hours > 18 or hours < 6:
