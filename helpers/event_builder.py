@@ -250,7 +250,7 @@ def build_json_entry(data): #builds an entry for one segment
                     "precipitation": float(data["precipitation"]),
                 }
 
-
+#based on the formula here https://learnmetrics.com/dew-point-calculator-chart-formula/
 def generate_dew_point(temp, humidity):
     celsius = (temp - 32) / 1.8 #since we're burgerbrained all our temps are in fahrenheit
     #but the formula is for C, so...
