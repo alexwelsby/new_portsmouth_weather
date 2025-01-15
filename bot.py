@@ -4,7 +4,7 @@ import asyncio
 from discord.ext import commands
 import pytz
 from datetime import datetime
-from config import TOKEN, SharedState
+from config import TOKEN, SharedState, GUILD, TIMEZONE
 from helpers.category_utils import calculate_uptime
 from helpers.redis_utils import populate_events_vars
 
@@ -28,9 +28,8 @@ async def on_ready():
 
 
 async def check_for_rollover(days):
-    seattle_tz = pytz.timezone('America/Los_Angeles')
+    seattle_tz = pytz.timezone(TIMEZONE)
     current_date = datetime.now(seattle_tz).date()
-    print(current_date)
     while auto_advance:
         new_date = datetime.now(seattle_tz).date()
         if new_date != current_date:
@@ -48,7 +47,7 @@ async def weather(ctx):
 @bot.command(name='sync', description='Owner only')
 @commands.is_owner()
 async def sync(ctx):
-    MY_GUILD = discord.Object(id=1315499446007762994)
+    MY_GUILD = discord.Object(id=GUILD)
     bot.tree.copy_global_to(guild=MY_GUILD)
     await bot.tree.sync(guild=MY_GUILD)
     await ctx.send('Command tree synced.')

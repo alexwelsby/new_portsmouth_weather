@@ -72,3 +72,40 @@ I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c87
 
 - **/debug_list_reports**
   Prompts the bot to send you a text file of EVERY SINGLE POSSIBLE WEATHER REPORT. I used it to proofread reports.
+
+  # NOTE FOR NON-AM READERS WHO WOULD LIKE TO MODIFY THIS FOR THEIR OWN SETTING
+  This bot was made explicitly for the AM setting and uses a Redis database to store and modify Openweatherapi json files. 
+  
+  In order to modify it for your own setting, you'll need to get your own weather data in json format from [Openweatherapi](https://home.openweathermap.org/marketplace) - for usability you'll need to split this json into separate YYYY-MM jsons yourself, and likely pick and choose how many entries you want to keep, as the default openweatherapi hourly data will blow up your redis database big and round from the sheer volume. For what it's worth, this bot was programmed with the assumption that you'd be using 8-hour segments - one around midnight, one around 8am, and one around 4pm for each day.
+
+  Upload all your monthly data to the Free plan of the [Redislabs database](https://app.redislabs.com/#/databases)
+
+  Create an .env file that looks like this (REMEMBER TO INCLUDE .ENV IN YOUR .GITIGNORE):
+
+  TOKEN=your Discord Token
+
+  BASE_URL=the base URL of your Redislab database
+
+  PORT=your Redis database port
+
+  USERNAME=your Redis database username
+
+  PASSWORD=the Redis database password
+
+  GUILD=The guild ID of the server (used for the sync command, which only I can run)
+
+  LOCATION=the name of your fictional town/setting (Used in flavor text)
+
+  PYTZ_TIMEZONE=The Pytz timezone of your location ([Check here for possible timezones, or run pytz.all_timezones](https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568) (Used throughout bot)
+
+  FIRST_DAY=The first unix date in your data (Used in day rollover checks in config.py)
+
+  LAST_DAY=The last unix date in your data (Used in day rollover checks in config.py)
+
+  OFFSET=How many seconds your first data entry is offset from midnight; my data starts at 1AM, so my offset is 3600. Yours will likely be 0 as I modified my data
+
+
+
+While the location and timezone aren't sensitive information, I wanted to keep them in the .env to make it easier for others to build their own weather bot.
+  
+

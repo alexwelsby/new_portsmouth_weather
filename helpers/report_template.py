@@ -59,7 +59,7 @@ class report_template:
                     "arctic": {
                         "Clear": "It will be freezing, but we'll have clear skies for this {time_period}. Temperatures have dropped to {temp_min}°F for our lows and {temp_max}°F for our highs, with a RealFeel of {temp}°F.",
                         "Clouds": "Get your ice scraper ready, as {location} is going to have some freezing temperatures this {time_period}, with {weather_description}. Temperatures have dropped to {temp_min}°F for our lows and {temp_max}°F for our highs, with a RealFeel of {temp}°F.",
-                        "Rain": "Get your de-icers ready, as we're going to have some freezing {weather_description} is coming to {location}; most of New Portsmouth can expect to see {precipitation} inches before the {time_period} is out. Temperatures have dropped to {temp_min}°F for our lows and {temp_max}°F for our highs, with a RealFeel of {temp}°F.",
+                        "Rain": "Get your de-icers ready, as we're going to have some freezing {weather_description} is coming to {location}; most of {location} can expect to see {precipitation} inches before the {time_period} is out. Temperatures have dropped to {temp_min}°F for our lows and {temp_max}°F for our highs, with a RealFeel of {temp}°F.",
                         "Snow": "The polar vortex has brought winter early to {location} this {time_period} with some {weather_description} - most areas of town can expect to see {precipitation} inches. Temperatures have dropped to {temp_min}°F for our lows and {temp_max}°F for our highs, with a RealFeel of {temp}°F.",
                     },
                     "cold": {

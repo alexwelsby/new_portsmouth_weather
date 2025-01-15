@@ -9,6 +9,8 @@ load_dotenv()
 
 #discord tokennn
 TOKEN = os.getenv('DISCORD_TOKEN')
+#Discord guild
+GUILD = os.getenv('GUILD')
 
 #redis stuff
 PORT = int(os.getenv('PORT'))
@@ -17,8 +19,14 @@ USERNAME = os.getenv('USERNAME')
 BASE_URL = os.getenv('BASE_URL')
 
 #general bot info.. new portsmouth, date, etc
+#the stuff that's not necessarily sensitive
+#but is good to be able to modify quickly for customization
 LOCATION = os.getenv('LOCATION')
+TIMEZONE = os.getenv('PYTZ_TIMEZONE')
 ADMIN_ROLE = os.getenv('ROLE')
+OFFSET = os.getenv('OFFSET')
+FIRST_DAY = os.getenv('FIRST_DAY')
+LAST_DAY = os.getenv('LAST_DAY')
 
 redis_client = redis.StrictRedis(
     host=BASE_URL,
@@ -52,7 +60,7 @@ class SharedState:
 
     @classmethod
     def write_date(cls, date):
-        offset = timezone(timedelta(seconds=-28800))
+        offset = timezone(timedelta(seconds=TIMEZONE))
 
         data = {
             'bot_date': date,
@@ -64,17 +72,23 @@ class SharedState:
                 file.write(f"{key}={value}\n")
 
         cls.bot_date = cls.read_date() #updates our variables to match the txt file we just wrote
+
+    #returns a unix date as that's what we use
+    #difference is in seconds
+    def localize_to_location(date, time_dif):
+        local_tz = pytz.timezone("America/Los_Angeles")
+        naive_date = datetime.fromisoformat(date)
+        date = local_tz.localize(naive_date) + timedelta(seconds=time_dif)
+        return date.timestamp()
     
     @classmethod
     def rollover_date(cls):
-        first_day = 1672531200
-        last_day = 1733587200
         bot_date = cls.read_date() #making sure we're updated to the latest txt file
-        next_day = (datetime.fromisoformat(bot_date) + timedelta(days=1)).replace(tzinfo=timezone(timedelta(seconds=-28800)))  #adds one day to our date
-        if next_day.timestamp() >= last_day: #can't go beyond our last day in our data
+        next_day = cls.localize_to_location(bot_date, 86400)  #adds one day to our date
+        if next_day >= LAST_DAY: #can't go beyond our last day in our data
             unix_date = datetime.strptime(bot_date, '%Y-%m-%d').timestamp()
-            date = (unix_date - last_day) + first_day #lands us at our time difference from the first day in the data
-            date = datetime.fromtimestamp(date).replace(tzinfo=timezone(timedelta(seconds=-28800)))
+            date = (unix_date - LAST_DAY) + FIRST_DAY #lands us at our time difference from the first day in the data
+            date = datetime.fromtimestamp(date).replace(tzinfo=timezone(timedelta(seconds=TIMEZONE)))
         else:
             restart_event = cls.rolling_out_of_event(next_day.strftime('%Y-%m-%d')) #can either return None or the unix timestamp of the event start
             if restart_event != None: #checking to make sure we're not rolling out of the current event prematurely (ie, before a mod ends it)
@@ -111,11 +125,8 @@ class SharedState:
     
     @classmethod
     def check_if_event(cls, date):
-        #our data is at a 1hr offset from midnight, ergo...
         #and we're avoiding using the utils to prevent a circular import. cry cry
-        date = (datetime.fromisoformat(date) + timedelta(minutes=60))
-        tz = pytz.timezone('US/Pacific')
-        unix_date = int(tz.localize(date).timestamp())
+        unix_date = cls.localize_to_location(date, OFFSET) #360 seconds
         if (len(cls.all_events) > 0):
             for event in cls.all_events:
                 if unix_date >= event.start_unix and unix_date <= event.end_unix:
