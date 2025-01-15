@@ -76,7 +76,7 @@ class SharedState:
     #returns a unix date as that's what we use
     #difference is in seconds
     def localize_to_location(date, time_dif):
-        local_tz = pytz.timezone("America/Los_Angeles")
+        local_tz = pytz.timezone(TIMEZONE)
         naive_date = datetime.fromisoformat(date)
         date = local_tz.localize(naive_date) + timedelta(seconds=time_dif)
         return date.timestamp()
