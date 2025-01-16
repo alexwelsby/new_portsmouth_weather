@@ -1,16 +1,18 @@
 import os
 import redis
 from dotenv import load_dotenv
+from helpers.event import Event
 from datetime import datetime, timezone, timedelta
 import re
 import pytz
+from typing import Dict
 
 load_dotenv()
 
 #discord tokennn
 TOKEN = os.getenv('DISCORD_TOKEN')
 #Discord guild
-GUILD = int(os.getenv('GUILD'))
+GUILD = os.getenv('GUILD')
 
 #redis stuff
 PORT = int(os.getenv('PORT'))
@@ -40,8 +42,7 @@ class SharedState:
     time_period = 'week'
     start_time = datetime.now()
     bot_date = '2023-02-01'
-    all_events = [ ] #first should be unix date of the start of the event, last is unix date of end of event
-    #should add error handling later...
+    all_events: Dict[str, Event] = { } #every key should be a redis key that matches to an Event object of {key=str; unix_start=int; unix_end=int} structure
 
     @classmethod
     def read_date(cls):
@@ -97,37 +98,58 @@ class SharedState:
         cls.write_date(datetime.fromtimestamp(date).strftime('%Y-%m-%d'))
         return cls.read_date()
 
-    def add_event(self, new_event):
-        for event in self.all_events:
-            if event.event_redis_key == new_event.event_redis_key and event.start_unix == new_event.start_unix and event.end_unix == new_event.end_unix:
-                return
-            elif event.event_redis_key == new_event.event_redis_key:
-                event = new_event
-        self.all_events.append(new_event)
+    @classmethod
+    def add_event(cls, new_event: Event):
+        all_events = cls.all_events
+        if all_events: #if it's not empty
+            for redis_key in all_events.keys():
+                event = all_events[redis_key]
+                if event.is_same_event(new_event): return #if they're the same, don't do anything
+                elif event.get_key() == new_event.get_key():
+                    all_events[redis_key] = new_event #elsewise replace the old event, just like what would happen in redis
+                    return
+        new_key = new_event.get_key()
+        all_events[new_key] = new_event
     
-    def remove_event(self, redis_path):
-        if len(self.all_events) > 0:
-            for event in self.all_events:
-                if event.event_redis_key == redis_path:
-                    self.all_events.remove(event)
-                    return 'Removed event from bot memory.'
-        else:
-            return 'No such event found in bot memory.'
+    @classmethod
+    def remove_event(cls, redis_path):
+        return cls.all_events.pop(redis_path, None)
+    
+    @classmethod
+    def get_current_event(cls):
+        bot_date = cls.bot_date
+        return cls.check_if_event(bot_date)
+
+    
+    @classmethod
+    def end_current_event(cls):
+        bot_date = cls.bot_date
+        event_key = cls.check_if_event(bot_date)
+        if event_key != None:
+            cls.remove_event(event_key)
+        return event_key
+
 
     def get_events(self):
         s = ""
-        for event in self.all_events:
+        for event in self.all_events.values():
             s += str(event) + '\n'
         return s
+    
+    @classmethod
+    def get_event(cls, redis_key):
+        all_events = cls.all_events
+        return all_events[redis_key] if redis_key in all_events else None
     
     @classmethod
     def check_if_event(cls, date):
         #and we're avoiding using the utils to prevent a circular import. cry cry
         unix_date = cls.localize_to_location(date, OFFSET) #3600 seconds
-        if (len(cls.all_events) > 0):
-            for event in cls.all_events:
-                if unix_date >= event.start_unix and unix_date <= event.end_unix:
-                    return event.event_redis_key
+        all_events = cls.all_events
+        if all_events:
+            for event in all_events.values():
+                if unix_date >= event.get_start() and unix_date <= event.get_end():
+                    return event.get_key()
         return None
     
     @classmethod
@@ -135,9 +157,9 @@ class SharedState:
         bot_date_key = cls.check_if_event(cls.bot_date)
         new_date_key = cls.check_if_event(new_date)
         if bot_date_key != None and new_date_key == None:
-            for event in cls.all_events:
-                if event.event_redis_key == bot_date_key:
-                    return event.start_unix
+            for event_key in cls.all_events.keys():
+                if event_key == bot_date_key:
+                    return cls.all_events[event_key].start_unix
         else:
             return None
 

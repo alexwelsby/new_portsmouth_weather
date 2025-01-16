@@ -28,7 +28,7 @@ def build_weatherman(result, time_period):
         'weather_icon': weather_icon,
     }
 
-    print(f"Final data structure is {data}.")
+    #print(f"Final data structure is {data}.")
 
     weather_dat = weather_data(data)
     weatherman = weather_report()
@@ -82,7 +82,7 @@ def calculate_averages(data):
     averages = {key: round(value / count, 1) for key, value in totals.items() if key != 'precipitation'}
     averages['precipitation'] = round(totals['precipitation'], 1) #just because the weather reports sound more natural if they describe overall precipitation...
     #does mean our variable name is inaccurate though
-    print(f"Averages have been calculated as {averages}.")
+    #print(f"Averages have been calculated as {averages}.")
     return averages
 
 def debug_descriptions(): #using this to proofread written descriptions for awkward verbiage/grammatical errors across all possible conditions lol

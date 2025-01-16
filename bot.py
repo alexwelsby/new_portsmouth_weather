@@ -23,34 +23,32 @@ async def on_ready():
     bot_date = SharedState.read_date()
     populate_events_vars()
     print(f'Bot\'s current date is {bot_date}. Current uptime: {days} days, {hours} hours, {minutes} minutes, and {seconds} seconds.')
-    bot.loop.create_task(check_for_rollover(days)) #if auto_advance is true, advances the current date by 1
+    bot.loop.create_task(check_for_rollover()) #if auto_advance is true, advances the current date by 1
 
-
-
-async def check_for_rollover(days):
-    seattle_tz = pytz.timezone(TIMEZONE)
-    current_date = datetime.now(seattle_tz).date()
+async def check_for_rollover():
+    tz = pytz.timezone(TIMEZONE)
+    current_date = datetime.now(tz).date()
     while auto_advance:
-        new_date = datetime.now(seattle_tz).date()
+        new_date = datetime.now(tz).date()
         if new_date != current_date:
             current_date = new_date
             date = SharedState.rollover_date()
             print(f"Date has been updated to {date}")
         await asyncio.sleep(300) #wait for 5 minutes before checking again
 
-#parent group for weatherbot commands
-@bot.group(invoke_without_command=True)
-async def weather(ctx):
-    await ctx.send("Available subcommands: report <day|week>, set_date <date>, get_date. Use '!weather <subcommand> <optional:args>'.")
-
-
 @bot.command(name='sync', description='Owner only')
 @commands.is_owner()
 async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send('Command tree synced.', ephemeral=True)
+
+@bot.command(name='clear_commands', description='Owner only')
+@commands.is_owner()
+async def unsync(ctx):
     MY_GUILD = discord.Object(id=GUILD)
-    bot.tree.copy_global_to(guild=MY_GUILD)
-    await bot.tree.sync(guild=MY_GUILD)
-    await ctx.send('Command tree synced.')
+    bot.tree.clear_commands(guild=None)
+    bot.tree.clear_commands(guild=MY_GUILD)
+    await ctx.send('Command tree cleared.', ephemeral=True)
 
 async def load_extensions():
     extensions = [
@@ -67,6 +65,8 @@ async def main():
         await load_extensions()
         await bot.start(TOKEN)
         await bot.tree.sync()
+        
+        
 
 if __name__ == '__main__':
     import asyncio

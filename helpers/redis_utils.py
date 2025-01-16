@@ -35,8 +35,7 @@ def populate_events_vars(): #assuming our bot went offline, we need to double-ch
         end_unix = data[-1]['dt']
         #repeat code but i am tired. avoiding circular imports
         event = Event(event_redis_key=key, start_unix=start_unix, end_unix=end_unix)
-        SharedState.add_event(SharedState, event)
-        print(SharedState.get_events(SharedState))
+        SharedState.add_event(event)
 
 def get_event_json(key):
     if redis_client.exists(key):
@@ -56,7 +55,6 @@ def get_current_json(bot_date, event_key, time_period):
         key = bot_date[:-3] #chops it to yyyy-mm (what the json keys are)
     result = ""
     if redis_client.exists(key):  #check if the key exists
-        print(key)
         json_data = redis_client.execute_command('JSON.GET', key)
         data = json.loads(json_data) #loads it into a list
 
