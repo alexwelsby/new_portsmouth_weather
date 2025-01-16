@@ -4,7 +4,8 @@ from discord import app_commands
 import io
 from typing import Optional
 from dateutil.parser import parse
-from helpers.event_builder import generate_json_event
+from datetime import datetime
+from helpers.event_builder import generate_json_event, get_start_end, add_event
 from helpers.redis_utils import remove_from_redis,get_event_json, json_loads, add_to_redis
 from config import SharedState
 from helpers.guide_check import is_guide
@@ -80,80 +81,123 @@ class events(commands.Cog):
             return
         else:
             generate_json_event(params_list)
-            await interaction.response.send_message(f"Weather event created with the following parameters: {params_list}. \n Please note that any undeclared parameters have been filled in with historical weather data from a nearby location.")
+            await interaction.response.send_message(f"Weather event created with the following parameters: {params_list}. \n Please note that any undeclared parameters have been filled in with historical weather data from a nearby location.", ephemeral=True)
             return
 
     @app_commands.command(name='remove_event', description='Deletes the event with the given redis key.')
-    @app_commands.describe(args_redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
+    @app_commands.describe(redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
     @is_guide()
-    async def remove_event(self,  interaction: discord.Interaction, args_redis_key:str):
-        response = remove_from_redis(args_redis_key)
-        print(response)
-        memory = SharedState.remove_event(SharedState, args_redis_key)
-        print(memory)
-        await interaction.response.send_message(response + "\n" + memory)
+    async def remove_event(self,  interaction: discord.Interaction, redis_key:str):
+        response = remove_from_redis(redis_key)
+        pop_response = SharedState.remove_event(SharedState, redis_key)
+        if pop_response == None:
+            pop_response = "No such key found in the bot's memory."
+        else:
+            pop_response = f"{redis_key} successfully removed from bot memory."
+        await interaction.response.send_message(response + "\n" + pop_response, ephemeral=True)
         return
 
     @app_commands.command(name='list_events', description='Lists all currently scheduled events with their keys and unix start and end times.')
     @is_guide()
     async def list_events(self, interaction: discord.Interaction):
         all_events = SharedState.all_events
-        s = ""
         if len(all_events) > 0:
-            for event in all_events:
-                s += str(event) + "\n"
+            embed = self.create_event_embed(all_events, interaction)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
         else:
             s = 'No events found. Try using /create_event to create a new weather event.'
-        await interaction.response.send_message(s)
-        return
+            await interaction.response.send_message(s, ephemeral=True)
+            return
+    
+    @app_commands.command(name='get_current_event', description='Gets the Redis key of the current event.')
+    @is_guide()
+    async def get_current_event(self, interaction: discord.Interaction):
+        redis_key = SharedState.get_current_event()
+        if redis_key == None:
+            await interaction.response.send_message("There's no event currently running.", ephemeral=True)
+            return
+        else:
+            await interaction.response.send_message(f"The currently-running event has the key {redis_key}. Run /download_event {redis_key} to see its data, or /remove_event {redis_key} to end it.", ephemeral=True)
+            return
+    
+    @app_commands.command(name='end_current_event', description='Ends the event that\'s occurring now, if there is one.')
+    @is_guide()
+    async def end_current_event(self, interaction: discord.Interaction):
+        redis_key = SharedState.end_current_event()
+        if redis_key == None:
+            await interaction.response.send_message("There's no event currently running.", ephemeral=True)
+            return
+        else:
+            response = remove_from_redis(redis_key)
+            if response == None:
+                await interaction.response.send_message(f"{redis_key} deleted from bot memory, but not found in redis. Something went wonky...", ephemeral=True)
+                return
+            else: 
+                await interaction.response.send_message(f"{redis_key} has been deleted from bot memory and redis - it will trouble you no more.",ephemeral=True)
+                return
+        
+        
 
     @app_commands.command(name='download_event', description='Downloads the raw data of the event at the given redis key.')
     @app_commands.describe(redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
     @is_guide()
     async def download_event(self, interaction: discord.Interaction, redis_key:str):
         json = get_event_json(redis_key)
-        print(json)
         if json == None:
-            await interaction.response.send_message("No event found at that key. Did you misspell it? Use !list_events to double-check all available keys.")
+            await interaction.response.send_message("No event found at that key. Did you misspell it? Use !list_events to double-check all available keys.", ephemeral=True)
         else:
             #no disk usage for this, just in-memory?
             with io.StringIO() as file:
                 file.write(json)
                 file.seek(0) #resetting the file buffer to the start
                 json_file = discord.File(file, filename=f"{redis_key}.json")
-                await interaction.response.send_message(f"Json file found for {redis_key}: and now, the weather.", file=json_file)
+                await interaction.response.send_message(f"Json file found for {redis_key}: and now, the weather.",ephemeral=True, file=json_file)
                 return
 
-    @commands.command(name='overwrite_event', description='Upload a .json attachment to replace a given event\'s raw data. (WARNING: MAKE SURE YOU KNOW WHAT YOU\'RE DOING! YOU CAN BREAK YOUR EVENT.)')
+    @app_commands.command(name='overwrite_event', description='Upload a .json attachment to replace a given event\'s raw data.')
     @app_commands.describe(redis_key="The redis key of the event (If you don't know of any keys, use /list_events to see all keys.)")
     @is_guide()
-    async def overwrite_event(self,  interaction: discord.Interaction, redis_key:str):
-        found = False
-        for event in SharedState.all_events:
-            print(event.event_redis_key)
-            if event.event_redis_key == redis_key:
-                found = True
-        if not found:
-            await interaction.response.send_message("ERROR: The event key you passed does not exist as an Event in the Redis database. This command is intended for overwriting and fine-tuning existing events that are already in the database, not creating new events. Please use !create_event with your desired parameters first.")
+    async def overwrite_event(self, interaction: discord.Interaction, redis_key:str):
+        found_event = SharedState.get_event(redis_key)
+        if found_event == None:
+            await interaction.response.send_message("ERROR: The event key you passed does not exist as an Event in the Redis database. This command is intended for overwriting and fine-tuning existing events that are already in the database, not creating new events. Please use !create_event with your desired parameters first.", ephemeral=True)
             return
         
         async for message in interaction.channel.history(limit=10):
             if message.author == interaction.user and message.attachments:
                 attachment = message.attachments[0]
-
             if not attachment:
-                await interaction.response.send_message("ERROR: You forgot to attach a .json file to this command.")
+                await interaction.response.send_message("ERROR: You forgot to send a json file before running this command.", ephemeral=True)
                 return
         #getting the first attachment - could change this to allow bulk attachments later
 
             if not attachment.filename.endswith('.json'):
-                await interaction.response.send_message("ERROR: The attached file is not a .json. Please attach a .json file.")
+                await interaction.response.send_message("ERROR: The attached file is not a .json. Please attach a .json file.",ephemeral=True)
                 return
         
             file_content = await attachment.read()
-            response = add_to_redis(redis_key, json_loads(file_content))
-            await interaction.response.send_message(response)
+            json = json_loads(file_content)
+            response = add_to_redis(redis_key, json)
+            start, end = get_start_end(json)
+            add_event(redis_key, start, end)
+            await interaction.response.send_message(response,ephemeral=True)
             return
+        
+    def create_event_embed(self, all_events, interaction):
+        title = "All scheduled events:"
+        embed = discord.Embed(title=title,
+            color=interaction.guild.me.top_role.color,
+            timestamp=discord.utils.utcnow(),)
+        for event in all_events.values():
+            date_start = datetime.fromtimestamp(event.get_start()).strftime('%Y-%m-%d')
+            date_end = datetime.fromtimestamp(event.get_end()).strftime('%Y-%m-%d')
+            embed.add_field(name="Redis Key", value=f"{event.get_key()}", inline=True)
+            embed.add_field(name="Start Time", value=f"{date_start}", inline=True)
+            embed.add_field(name="End Time", value=f"{date_end}", inline=True)
+
+        embed.set_footer(text=f"Requested by {interaction.user.name}")
+        return embed
         
 
 

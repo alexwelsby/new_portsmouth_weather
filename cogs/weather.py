@@ -20,11 +20,8 @@ class Weather(commands.Cog):
         try:
             async with interaction.channel.typing():
                 bot_date = SharedState.read_date()
-                print(bot_date)
                 event_key = SharedState.check_if_event(bot_date) #returns either the key or none
-                print(event_key)
                 result = get_current_json(bot_date, event_key, time_period)
-                print(result)
                 if result != "":
                     data, report = build_weatherman(result, time_period)
                     embed = create_embed(data, report, interaction)
@@ -44,10 +41,10 @@ class Weather(commands.Cog):
                     file.write(all_reports)
                     file.seek(0) #resetting the file buffer to the start
                     txt_file = discord.File(file, filename=f"debug_descriptions.txt")
-                    await interaction.response.send_message(f"Here's a txt file of all possible weather reports, with placeholder info.", file=txt_file)
+                    await interaction.response.send_message(f"Here's a txt file of all possible weather reports, with placeholder info.", ephemeral=True, file=txt_file)
                     return
         except Exception as e:
-            await interaction.response.send_message(f"Error blowing up data: {e}")
+            await interaction.response.send_message(f"Error blowing up data: {e}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Weather(bot))

@@ -14,7 +14,7 @@ class Uptime(commands.Cog):
         async with interaction.channel.typing():
             days, hours, minutes, seconds = calculate_uptime()
             formatted_uptime = f"Uptime: {days}d {hours}h {minutes}m {seconds}s."
-            await interaction.response.send_message(formatted_uptime)
+            await interaction.response.send_message(formatted_uptime, ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(Uptime(bot))

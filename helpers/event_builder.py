@@ -7,7 +7,6 @@ from helpers.event import Event
 
 def generate_json_event(param_data):
     time_period = param_data['time_period']
-    #print(f"time period set as {time_period}")
     EVENT_yyyymm = "EVENT_" + param_data['start_date'][:-3] #this will be the redis key
     start_time = get_unix_date(param_data['start_date']) #going to add 8 hours to this per loop
     num_slices = get_num_of_slices(3, time_period) #3 = minimum of 3 reports per day (matches our json)
@@ -18,6 +17,11 @@ def generate_json_event(param_data):
     end_time = json_data[-1]["dt"] #unix time of the last entry
     add_to_redis(EVENT_yyyymm, new_json) #adds this event to the database
     add_event(EVENT_yyyymm, start_time, end_time) #adds an event object to the sharedState (start_time and end_time are in unix)
+
+def get_start_end(json_data): #used specifically for overwriting events; in the case of fully custom events we build unix dates from the passed yyyymmdd arg
+    start = json_data[0]["dt"]
+    end = json_data[-1]["dt"]
+    return start, end
 
 #so inelegant. and yet. it is what is
 def fill_none_values(json_data, param_data):
@@ -69,8 +73,8 @@ def verify_min_max(param_data):
 
 def add_event(EVENT_yyyymm, start_time, end_time):
     event = Event(event_redis_key=EVENT_yyyymm, start_unix=start_time, end_unix=end_time)
-    SharedState.add_event(SharedState, event)
-    print(SharedState.get_events(SharedState))
+    SharedState.add_event(event)
+    #print(SharedState.get_events(SharedState))
 
 def get_num_of_slices(num_per_day, time_period):
     if time_period == "day":
@@ -140,7 +144,6 @@ def update_json(json_data, outputs):
 
     for output in outputs:
         dt = output['dt']
-        print(dt)
         for entry in json_data:
             if entry["dt"] == dt:
                 entry["main"]["temp"] = output["temp"]
@@ -270,6 +273,7 @@ def generate_dew_point(temp, humidity):
 
 #taken from jfcarr's feelslike algorithm found here: https://gist.github.com/jfcarr/e68593c92c878257550d
 #note that his algorithm assumes US units - degrees F, MPH
+#does seem to have a model breakdown with temperatures >199 but uhhh if you're experiencing 200F you already have a problem
 def generate_realFeel(vTemperature, vWindSpeed, vRelativeHumidity):
     if vTemperature <= 50 and vWindSpeed >= 3:
         vFeelsLike = 35.74 + (0.6215*vTemperature) - 35.75*(vWindSpeed**0.16) + ((0.4275*vTemperature)*(vWindSpeed**0.16))

@@ -14,6 +14,8 @@ Weather reports themselves are designed to be 'informative' by providing climate
 
 Custom weather events can be created and even edited for very granular customization of a given day's climate, right down to wind speed. It should be noted that the bot will not end events on rollover - if it detects it's about to roll out of an event, it will instead roll its date back to the start of the event to prevent the weather event from ending before the mods are ready.
 
+Every command but **/weather report** is empheral - they can't be seen by anyone but the person who ran the command. This will help avoid channel bloat.
+
 ## Commands for the average guy
 
 - **/weather_report time_period:<today|day|week|month>**
@@ -21,18 +23,16 @@ Custom weather events can be created and even edited for very granular customiza
 
 ## Commands for the mods
 
-Oh, man.
-
 ### Date management commands
 
 - **/get_date**
-  Gets the bot's current date.
+  Empheral. Gets the bot's current date.
 
 - **/set_date date:<YYYY/MM/DD | July 7 2024 | etc>**
-  Sets the bot's current date to the one you specified. Note that the bot's historical weather data falls between December 31, 2022 and December 7, 2024, and any dates outside of this range will not have associated weather data.
+  Empheral. Sets the bot's current date to the one you specified. Note that the bot's historical weather data falls between December 31, 2022 and December 7, 2024, and any dates outside of this range will not have associated weather data.
 
 - **/rollover_date**
-  Manually advances the bot's internal date by one day. Useful if you're trying to advance into an Event.
+  Empheral. Manually advances the bot's internal date by one day. Useful if you're trying to advance into an Event.
   Note that the bot will automatically roll back to December 31, 2022 if it detects it's attempting to roll out of its valid range (December 31, 2022 - December 7, 2024).
   Do note that the bot will automatically advance its date at 00:00 PST every night.
 
@@ -42,7 +42,7 @@ Event commands are largely how mods will be able to customize the weather experi
 
 - **/create_event start_date:<YYYY:MM:DD|July 7 2023|etc> time_period:<day|week|month> chance_rain:<0-100> chance_snow:<0-100> min_temp:<#, fahrenheit> max_temp:<#, fahrenheit> min_precipitation:<#, inches> max_precipitation:<#, inches> min_cloud_cover:<0-100> max_cloud_cover:<0-100> min_humidity:<0-100> max-humidity:<0-100> min_windspeed:<0-100> max_windspeed:<0-100>**
 
-Do note that all 'min' values MUST be less than or equal to their 'max' values or the bot will be unhappy.
+Empheral. Do note that all 'min' values MUST be less than or equal to their 'max' values or the bot will be unhappy.
 
 Every argument (except for start_date and time_period) is OPTIONAL! If you don't fill an argument, the bot will take the missing argument(s), your start date, and the time period, and fetch the historical minimums and maximums from that time period.
 
@@ -56,14 +56,20 @@ Note that dew point cannot be specified as a parameter currently. I could add de
 
 I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c878257550d) in event_builder.py to calculate the RealFeel.
 
+- **get_current_event**
+Empheral. Returns the Redis database key of the current event, if there is one. Elsewise, sends a message saying there isn't.
+
+- **end_current_event**
+Empheral. Ends the current event, if there is one. Elsewise, sends a message saying there isn't.
+
 - **/list_events**
-  Lists all the current events stored in the bot's memory, their redis keys, and the Unix times at which they start and stop.
+  Empheral. Lists all the scheduled events stored in the bot's memory, their redis keys, and the days on which they start and stop.
 
 - **/download_event redis_key:<KEY_NAME>**
-  This command prompts the bot to offer the raw data of the specified key as a .json attachment. You can use this to inspect an event to verify that it's been generated correctly, OR you could use this in conjunction with **/overwrite_event redis_key:<KEY_NAME>** to further customize a given event.
+  Empheral. This command prompts the bot to offer the raw data of the specified key as a .json attachment. You can use this to inspect an event to verify that it's been generated correctly, OR you could use this in conjunction with **/overwrite_event redis_key:<KEY_NAME>** to further customize a given event.
 
 - **/overwrite_event redis_key:<KEY_NAME>**
-  Allows you to upload .json as an attachment to replace an event's data. WARNING: If you upload invalid json the weather data for your event will break!
+  Empheral. Allows you to overwrite the raw data of the event at the given redis_key - you can effectively micromanage every little detail of an event this way. SEND THE JSON YOU WISH TO REPLACE THE EVENT WITH *BEFORE* RUNNING THIS COMMAND *IN THE SAME CHANNEL*! @app_commands doesn't allow you to attach files directly to a slash command so this is the work-around. Note that it will only work if your .json file is within the last ten messages - so if you're trying to overwrite an event in a really busy channel, don't.
 
 ### Uptime commands
 
@@ -73,7 +79,20 @@ I also used Jfcarr's [feels_like.py](https://gist.github.com/jfcarr/e68593c92c87
 ### Weather report commands
 
 - **/debug_list_reports**
-  Prompts the bot to send you a text file of EVERY SINGLE POSSIBLE WEATHER REPORT. I used it to proofread reports.
+  Empheral. Prompts the bot to send you a text file of EVERY SINGLE POSSIBLE WEATHER REPORT. I used it to proofread reports.
+
+  ## HOW TO SET UP
+  REMEMBER TO SET INTEGRATION PERMISSIONS IN SERVER SETTINGS > INTEGRATIONS > BOTS AND APPS > NEW PORTSMOUTH WEATHER!
+
+  Otherwise everyone will see all commands, even ones their roles bar them from, which is not ideal.
+
+  Set it up so under Roles & Members, @Everyone is blocked.
+
+  For every command, add an override for the GUIDE role that allows GUIDES to use it. (If you're modifying this for your own server, replace 'GUIDE' with whatever your admin role is).
+
+  For /weather_report, add an override for @Everyone that allows @Everyone to use it.
+
+
 
   ## NOTE FOR ROLEPLAYERS WHO WOULD LIKE TO MODIFY THIS FOR THEIR OWN ROLEPLAY SERVER
 
