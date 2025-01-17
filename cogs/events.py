@@ -89,9 +89,9 @@ class events(commands.Cog):
     @is_guide()
     async def remove_event(self,  interaction: discord.Interaction, redis_key:str):
         response = remove_from_redis(redis_key)
-        pop_response = SharedState.remove_event(SharedState, redis_key)
+        pop_response = SharedState.remove_event(redis_key)
         if pop_response == None:
-            pop_response = "No such key found in the bot's memory."
+            pop_response = "No such key found in the bot's memory (it may have already been deleted)."
         else:
             pop_response = f"{redis_key} successfully removed from bot memory."
         await interaction.response.send_message(response + "\n" + pop_response, ephemeral=True)
